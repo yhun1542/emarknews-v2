@@ -195,7 +195,24 @@ class NewsService {
     else { cached = memoryCache.get(key); }
     if (cached) {
       this.logger.info(`[Cache] Returning cached data for section: ${section}_fast`);
-      return JSON.parse(cached);
+      try {
+        // 안전한 JSON 파싱
+        if (typeof cached === 'string') {
+          return JSON.parse(cached);
+        } else {
+          // 이미 객체인 경우 그대로 반환
+          return cached;
+        }
+      } catch (e) {
+        this.logger.warn(`[Cache] Invalid cached data for ${section}_fast, clearing cache:`, e.message);
+        // 잘못된 캐시 데이터 제거
+        if (redis) {
+          try { await redis.del(key); } catch (delErr) { this.logger.warn('Redis del failed:', delErr.message); }
+        } else {
+          memoryCache.delete(key);
+        }
+        // 캐시 제거 후 새로 데이터 수집
+      }
     }
 
     this.logger.info(`[${section}] Starting _getFast fetch process...`);
