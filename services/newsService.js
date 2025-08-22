@@ -281,7 +281,15 @@ class NewsService {
   async fetchFromNewsAPI(section) {
     if (!process.env.NEWS_API_KEY) return [];
     try {
-      const params = { pageSize: 50, sortBy: 'publishedAt' };
+      // 14일 전 날짜 계산
+      const from = new Date();
+      from.setDate(from.getDate() - 14);
+      
+      const params = { 
+        pageSize: 50, 
+        sortBy: 'publishedAt',
+        from: from.toISOString().split('T')[0] // YYYY-MM-DD 형식
+      };
       params.language = (section === 'kr' || section === 'korea') ? 'ko' : 'en';
 
       if (section === 'world') {
