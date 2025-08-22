@@ -312,10 +312,15 @@ class NewsService {
   async fetchFromGNews(section) {
     if (!process.env.GNEWS_API_KEY) return [];
     try {
+      // 14일 전 날짜 계산
+      const from = new Date();
+      from.setDate(from.getDate() - 14);
+      
       const params = {
         token: process.env.GNEWS_API_KEY,
         max: 50,
-        lang: section === 'kr' ? 'ko' : 'en'
+        lang: section === 'kr' ? 'ko' : 'en',
+        from: from.toISOString().split('T')[0] // YYYY-MM-DD 형식
       };
       if (section === 'tech') {
         params.topic = 'technology';
