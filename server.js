@@ -22,6 +22,16 @@ app.set('trust proxy', true); // Railway 프록시 환경에서 X-Forwarded-For 
 const newsService = new NewsService();
 const aiService = new AIService();
 
+// Admin endpoint for cache clearing
+app.get('/admin/clear-cache', async (req, res) => {
+  try {
+    await newsService.clearCache();
+    res.status(200).send('Cache cleared successfully!');
+  } catch (error) {
+    res.status(500).send('Failed to clear cache: ' + error.message);
+  }
+});
+
 // 2) rate-limit: 표준 헤더만 사용하고, proxy 신뢰 기반 IP 추출
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_WINDOW_MS ?? 60_000),
