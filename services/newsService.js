@@ -414,7 +414,12 @@ class NewsService {
         });
       });
     }catch(e){ 
-      this.logger.warn('YouT  async fetchFromRSS(url){
+      this.logger.warn('YouTube fail:', e.message); 
+      return []; 
+    }
+  }
+
+  async fetchFromRSS(url){
     try{
       const feed = await this.rssParser.parseURL(url);
       const items = feed.items || [];
@@ -434,7 +439,10 @@ class NewsService {
       this.logger.warn(`[Fetcher] RSS fail (${url}):`, e.message); 
       return []; 
     }
-  }/ 정규화 & 랭킹
+  }
+
+  // -----------------------------
+  // 정규화 & 랭킹
   // -----------------------------
   normalizeNewsAPIArticles(articles) {
     const thirtyDaysAgo = new Date();
