@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmarkNews - AI 실시간 뉴스</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg">
+    <style>
+        :root {
+            --primary-color: #5a4fcf;
+            --primary-light: #7c73e6;
+            --primary-dark: #4338ca;
+            --background-color: #f0f2f5;
+            --surface-color: #ffffff;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
+            --text-content: #334155;
+            --border-color: #e2e8f0;
+            --header-height: 68px;
+            --nav-height: 53px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: var(--background-color);
+        }
+
+        .header {
+            background: var(--surface-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1rem;
+            width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .logo-svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-text { 
+            font-size: 28px; 
+            font-weight: 800;
+        }
+
+        .logo-com { 
+            color: var(--primary-color); 
+            font-size: 20px; 
+            font-weight: 700;
+        }
+
+        .nav {
+            background: var(--surface-color);
+            position: sticky;
+            top: var(--header-height);
+            z-index: 999;
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.5rem;
+            padding: 0 1rem;
+            overflow-x: auto;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        .nav-item {
+            background: var(--background-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .main {
+            max-width: 1200px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .news-item {
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .news-content-wrapper {
+            padding: 1.25rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            gap: 0.8rem 1rem;
+            flex-wrap: wrap;
+        }
+
+        .news-source-time {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex-shrink: 1;
+            min-width: 0;
+        }
+
+        .news-source {
+            color: var(--primary-color);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .news-meta-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        .news-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .tag.urgent { background: #dc2626; }
+        .tag.important { background: #2563eb; }
+        .tag.hot { background: #ef4444; }
+        .tag.buzz { background: #a855f7; }
+
+        .rating-badge {
+            background: var(--primary-dark);
+            color: white;
+            padding: 0.3rem 0.7rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .rating-star {
+            color: #FFD700;
+        }
+
+        .news-title-translated {
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 0.8rem;
+        }
+
+        .summary-point {
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-content);
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .summary-bullet {
+            color: var(--primary-color);
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .news-actions-wrapper {
+            padding: 0.8rem 1.25rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--surface-color);
+            flex-shrink: 0;
+        }
+
+        .view-details-btn {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            transition: background 0.3s ease;
+        }
+
+        .view-details-btn:hover {
+            background: var(--primary-light);
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            :root {
+                --header-height: 60px;
+                --nav-height: 48px;
+            }
+
+            body {
+                background: var(--surface-color);
+            }
+
+            .logo-svg {
+                width: 32px;
+                height: 32px;
+            }
+
+            .logo-text { font-size: 22px; }
+            .logo-com { font-size: 16px; }
+
+            .main {
+                margin: 0;
+                padding: 0;
+            }
+
+            .news-grid {
+                display: block;
+                height: calc(100dvh - var(--header-height) - var(--nav-height));
+                height: calc(100vh - var(--header-height) - var(--nav-height));
+                overflow-y: auto;
+                scroll-snap-type: y mandatory;
+            }
+
+            .news-item {
+                height: 100%;
+                scroll-snap-align: start;
+                border-radius: 0;
+                box-shadow: none;
+                border: none;
+                border-bottom: 8px solid var(--background-color);
+            }
+
+            .news-content-wrapper {
+                padding: 1.5rem 1rem;
+                overflow-y: auto;
+                height: 100%;
+            }
+
+            .news-title-translated {
+                font-size: 1.5rem;
+            }
+
+            .news-actions-wrapper {
+                padding: 1rem;
+                margin-top: 1.5rem;
+                background: transparent;
+            }
+
+            .view-details-btn {
+                padding: 1rem;
+            }
+        }
+
+        /* Tablet styles */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .news-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Hide scrollbar */
+        .nav-container::-webkit-scrollbar,
+        .news-grid::-webkit-scrollbar,
+        .news-content-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-container, .news-grid, .news-content-wrapper {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .error-message h3 {
+            color: #dc2626;
+            margin-bottom: 1rem;
+        }
+
+        .retry-button {
+            max-width: 200px;
+            margin: 1rem auto;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo">
+                <img src="/logo.svg" alt="EmarkNews Logo" class="logo-svg" />
+                <span class="logo-text">EmarkNews</span><span class="logo-com">.com</span>
+            </a>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <div class="nav-container">
+            <button class="nav-item active" data-section="world">🌍 세계</button>
+            <button class="nav-item" data-section="kr">🇰🇷 한국</button>
+            <button class="nav-item" data-section="japan">🇯🇵 일본</button>
+            <button class="nav-item" data-section="buzz">🔥 Buzz</button>
+            <button class="nav-item" data-section="tech">💡 테크</button>
+            <button class="nav-item" data-section="business">💼 BIZ</button>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>뉴스를 불러오는 중입니다...</p>
+        </div>
+        <div id="news-grid" class="news-grid" style="display: none;"></div>
+        <div id="error" class="error-message" style="display: none;">
+            <h3>오류가 발생했습니다</h3>
+            <p id="error-text"></p>
+            <button onclick="location.reload()" class="view-details-btn retry-button">
+                새로고침
+            </button>
+        </div>
+    </main>
+
+    <script>
+        class EmarkNews {
+            constructor() {
+                this.currentSection = 'world';
+                this.articles = [];
+                this.isMobileView = window.innerWidth <= 768;
+                this.isTabletView = window.innerWidth > 768 && window.innerWidth <= 1024;
+                this.init();
+            }
+
+            init() {
+                this.setupNavigation();
+                this.loadNews('world');
+                
+                window.addEventListener('resize', () => {
+                    const wasMobile = this.isMobileView;
+                    const wasTablet = this.isTabletView;
+                    this.isMobileView = window.innerWidth <= 768;
+                    this.isTabletView = window.innerWidth > 768 && window.innerWidth <= 1024;
+                    
+                    if (wasMobile !== this.isMobileView || wasTablet !== this.isTabletView) {
+                        this.displayNews(this.articles);
+                    }
+                });
+            }
+
+            setupNavigation() {
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentSection = e.target.dataset.section;
+                        this.loadNews(this.currentSection);
+                        this.scrollToTop();
+                    });
+                });
+            }
+
+            async loadNews(section) {
+                this.showLoading();
+                
+                try {
+                    const response = await fetch(`/api/${section}/fast`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.data) {
+                        // 새로운 NewsService 구조: data.data가 직접 배열
+                        // 기존 구조: data.data.articles가 배열
+                        const articles = Array.isArray(data.data) ? data.data : data.data.articles;
+                        
+                        if (articles && articles.length > 0) {
+                            this.articles = articles;
+                            this.displayNews(this.articles);
+                        } else {
+                            this.showError('뉴스가 없습니다.');
+                        }
+                    } else {
+                        throw new Error('Invalid response format');
+                    }
+                } catch (error) {
+                    console.error('Failed to load news:', error);
+                    this.showError(error.message);
+                }
+            }
+
+            displayNews(articles) {
+                const newsGrid = document.getElementById('news-grid');
+                
+                if (!articles || articles.length === 0) {
+                    newsGrid.innerHTML = '<div class="error-message"><p>뉴스가 없습니다.</p></div>';
+                    this.hideLoading();
+                    newsGrid.style.display = this.isMobileView ? 'block' : 'grid';
+                    return;
+                }
+
+                const newsHtml = articles.map(article => this.createArticleCard(article)).join('');
+                newsGrid.innerHTML = newsHtml;
+                
+                // Add event listeners to detail buttons
+                this.addDetailButtonListeners();
+                
+                this.hideLoading();
+                newsGrid.style.display = this.isMobileView ? 'block' : 'grid';
+            }
+
+            createArticleCard(article) {
+                const timeAgo = this.getTimeAgo(article.publishedAt);
+                const rating = parseFloat(article.rating) || 3.0;
+                const displayTitle = article.titleKo || article.title;
+                const summaryPoints = article.summaryPoints || [article.descriptionKo || article.description || '요약 정보가 없습니다.'];
+                
+                // Generate tags HTML (only allowed tags)
+                const tagsHtml = (article.tags || [])
+                    .map(tag => {
+                        const tagClass = this.getTagClass(tag);
+                        return `<span class="tag ${tagClass}">${tag}</span>`;
+                    })
+                    .join('');
+                
+                // Generate summary HTML
+                const maxPoints = this.isMobileView ? 15 : 3;
+                const summaryHtml = summaryPoints
+                    .slice(0, maxPoints)
+                    .map(point => `
+                        <div class="summary-point">
+                            <span class="summary-bullet">•</span>
+                            <span class="summary-text">${point}</span>
+                        </div>
+                    `).join('');
+                
+                // Create action buttons
+                const actionsHtml = `
+                    <div class="news-actions-wrapper">
+                        <button class="view-details-btn" data-article-id="${article.id}" data-section="${this.currentSection}">
+                            ✨ 상세보기
+                        </button>
+                    </div>
+                `;
+
+                return `
+                    <article class="news-item" data-id="${article.id}">
+                        <div class="news-content-wrapper">
+                            <div class="news-header">
+                                <div class="news-source-time">
+                                    <span class="news-source">${article.source || 'Unknown'}</span>
+                                    <span>·</span>
+                                    <span class="time-ago">${timeAgo}</span>
+                                </div>
+                                <div class="news-meta-group">
+                                    ${tagsHtml ? `<div class="news-tags">${tagsHtml}</div>` : ''}
+                                    <div class="rating-badge">
+                                        <span class="rating-star">⭐</span>${rating.toFixed(1)}
+                                    </div>
+                                </div>
+                            </div>
+                            <h2 class="news-title-translated">${this.escapeHtml(displayTitle)}</h2>
+                            <div class="ai-summary-main">
+                                ${summaryHtml}
+                            </div>
+                            ${this.isMobileView ? actionsHtml : ''}
+                        </div>
+                        ${!this.isMobileView ? actionsHtml : ''}
+                    </article>
+                `;
+            }
+
+            getTagClass(tag) {
+                const tagMap = {
+                    '긴급': 'urgent',
+                    '중요': 'important',
+                    'Hot': 'hot',
+                    'Buzz': 'buzz'
+                };
+                return tagMap[tag] || 'default';
+            }
+
+            getTimeAgo(publishedAt) {
+                const now = new Date();
+                const published = new Date(publishedAt);
+                
+                if (isNaN(published.getTime())) {
+                    return '';
+                }
+                
+                const diffMs = now - published;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+                
+                if (diffMins < 1) return '방금 전';
+                if (diffMins < 60) return `${diffMins}분 전`;
+                if (diffHours < 24) return `${diffHours}시간 전`;
+                return `${diffDays}일 전`;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            addDetailButtonListeners() {
+                const detailButtons = document.querySelectorAll('.view-details-btn');
+                detailButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const articleId = button.getAttribute('data-article-id');
+                        const section = button.getAttribute('data-section');
+                        
+                        if (articleId && section) {
+                            this.openDetailPage(articleId);
+                        } else {
+                            alert('기사 정보를 찾을 수 없습니다.');
+                        }
+                    });
+                });
+            }
+
+            openDetailPage(articleId) {
+                const article = this.articles.find(a => a.id === articleId);
+                
+                if (!article) {
+                    alert('기사를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                // Store article in sessionStorage
+                sessionStorage.setItem(`article_${this.currentSection}_${articleId}`, JSON.stringify(article));
+                
+                // Navigate to detail page
+                window.location.href = `/detail.html?section=${this.currentSection}&id=${articleId}`;
+            }
+
+            scrollToTop() {
+                const target = this.isMobileView ? document.getElementById('news-grid') : window;
+                if (target && target.scrollTo) {
+                    target.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+
+            showLoading() {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('news-grid').style.display = 'none';
+                document.getElementById('error').style.display = 'none';
+            }
+
+            hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+
+            showError(message) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('news-grid').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-text').textContent = message;
+            }
+        }
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const newsApp = new EmarkNews();
+            window.newsApp = newsApp; // Make it globally accessible
+        });
+    </script>
+</body>
+</html>
+
