@@ -45,7 +45,7 @@ const FAST = {
 const RANK_TAU_MIN = Number(process.env.RANK_TAU_MIN || 90);
 const freshness = (ageMin) => Math.exp(-ageMin / RANK_TAU_MIN);
 const deduplicate = (items) => { const seen=new Set(); const out=[]; for(const it of items){ const k=sha1((it.title||'')+(it.url||'')); if(seen.has(k)) continue; seen.add(k); out.push(it);} return out; };
-const filterRecent = (items,h=12)=> items.filter(it=>minutesSince(it.publishedAt)<=h*60);
+const filterRecent = (items,h=336)=> items.filter(it=>minutesSince(it.publishedAt)<=h*60); // 14일 = 336시간
 
 // -------------------------------
 // 섹션별 가중치 프로필
@@ -202,7 +202,7 @@ class NewsService {
     
     const p1 = await Promise.race([ Promise.allSettled(phase1), new Promise(r=>setTimeout(()=>r([]), FAST.PHASE1_MS)) ]);
     const first = (Array.isArray(p1)?p1:[]).filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
-    const ranked = this.rankAndSort(section, deduplicate(filterRecent(first,12))).slice(0,FAST.FIRST_BATCH);
+    const ranked = this.rankAndSort(section, deduplicate(filterRecent(first,336))).slice(0,FAST.FIRST_BATCH);
     const initial = { success: true, data: ranked, section, total:ranked.length, partial:true, timestamp:new Date().toISOString() };
     
     try {
@@ -231,7 +231,7 @@ class NewsService {
         
         const p2 = await Promise.race([ Promise.allSettled(phase2), new Promise(r=>setTimeout(()=>r([]), FAST.PHASE2_MS)) ]);
         const extra = (Array.isArray(p2)?p2:[]).filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
-        const merged = deduplicate(filterRecent([...ranked,...extra],12));
+        const merged = deduplicate(filterRecent([...ranked,...extra],336));
         
         const enriched = await this._enrichArticlesWithAI(merged);
         const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
@@ -261,7 +261,7 @@ class NewsService {
 
     const settled = await Promise.allSettled(tasks);
     const raw = settled.filter(s=>s.status==='fulfilled').flatMap(s=>s.value||[]);
-    const uniqueRaw = deduplicate(filterRecent(raw, 12));
+    const uniqueRaw = deduplicate(filterRecent(raw, 336));
     
     const enriched = await this._enrichArticlesWithAI(uniqueRaw);
     const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
