@@ -128,6 +128,21 @@ class NewsService {
     this.logger = opts.logger || logger;
     this.API_TIMEOUT = 5000;
     this.aiService = new AIService();
+
+    // [LOG] 서비스 시작 시 환경 변수 로드 상태를 명확히 확인합니다.
+    this.logger.info('--- Initializing NewsService: Checking Environment Variables ---');
+    const checkEnv = (key) => {
+      const value = process.env[key];
+      if (value && value.length > 4) {
+        this.logger.info(`[ENV] ${key}: Loaded (ends with ...${value.slice(-4)})`);
+      } else if (value) {
+        this.logger.info(`[ENV] ${key}: Loaded (is short)`);
+      } else {
+        this.logger.warn(`[ENV] ${key}: NOT FOUND! Service may not work as expected.`);
+      }
+    };
+    ['NEWS_API_KEY', 'GNEWS_API_KEY', 'NAVER_CLIENT_ID', 'NAVER_CLIENT_SECRET', 'YOUTUBE_API_KEY', 'REDIS_URL'].forEach(checkEnv);
+    this.logger.info('--------------------------------------------------------------');
     
     this.newsApiClient = axios.create({ baseURL:'https://newsapi.org/v2/', timeout:this.API_TIMEOUT, headers:{ 'X-Api-Key': process.env.NEWS_API_KEY || '' }});
     this.gnewsApi = axios.create({ baseURL:'https://gnews.io/api/v4/', timeout:this.API_TIMEOUT });
@@ -178,7 +193,12 @@ class NewsService {
     let cached = null;
     if (redis) { try { cached = await redis.get(key); } catch (e) { this.logger.warn('Redis get failed:', e.message); } }
     else { cached = memoryCache.get(key); }
-    if (cached) return JSON.parse(cached);
+    if (cached) {
+      this.logger.info(`[Cache] Returning cached data for section: ${section}_fast`);
+      return JSON.parse(cached);
+    }
+
+    this.logger.info(`[${section}] Starting _getFast fetch process...`);
 
     const rd = REDDIT_EP[section] || [];
     const rs = RSS_FEEDS[section] || [];
@@ -202,7 +222,16 @@ class NewsService {
     
     const p1 = await Promise.race([ Promise.allSettled(phase1), new Promise(r=>setTimeout(()=>r([]), FAST.PHASE1_MS)) ]);
     const first = (Array.isArray(p1)?p1:[]).filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
-    const ranked = this.rankAndSort(section, deduplicate(filterRecent(first,336))).slice(0,FAST.FIRST_BATCH);
+    this.logger.info(`[${section}] Step 1: Fetched ${first.length} raw articles from phase 1 sources.`);
+    
+    const filtered = filterRecent(first,336);
+    this.logger.info(`[${section}] Step 2: After date filtering (14 days), ${filtered.length} articles remain.`);
+    
+    const unique = deduplicate(filtered);
+    this.logger.info(`[${section}] Step 3: After deduplication, ${unique.length} unique articles remain.`);
+    
+    const ranked = this.rankAndSort(section, unique).slice(0,FAST.FIRST_BATCH);
+    this.logger.info(`[${section}] Step 4: After ranking, top ${ranked.length} articles selected.`);
     const initial = { success: true, data: ranked, section, total:ranked.length, partial:true, timestamp:new Date().toISOString() };
     
     try {
@@ -296,15 +325,20 @@ class NewsService {
         const countries = ['us', 'gb', 'jp', 'au', 'ca'];
         const promises = countries.map(country => this.newsApiClient.get('top-headlines', { params: { ...params, country } }).catch(err => { this.logger.warn(`NewsAPI failed for country ${country}:`, err.message); return { data: { articles: [] }}; }));
         const results = await Promise.all(promises);
-        return results.flatMap(r => this.normalizeNewsAPIArticles(r.data.articles || []));
+        const articles = results.flatMap(r => r.data.articles || []);
+        this.logger.info(`[Fetcher] NewsAPI fetched ${articles.length} articles for section: ${section}`);
+        return this.normalizeNewsAPIArticles(articles);
       } else if (['tech', 'business'].includes(section)) {
         params.category = section;
       }
       
       const response = await this.newsApiClient.get('top-headlines', { params });
-      return this.normalizeNewsAPIArticles(response.data.articles || []);
+      const articles = response.data.articles || [];
+      this.logger.info(`[Fetcher] NewsAPI fetched ${articles.length} articles for section: ${section}`);
+      return this.normalizeNewsAPIArticles(articles);
     } catch (error) {
-      this.logger.error('NewsAPI error:', error.message);
+      const status = error.response?.status || 'N/A';
+      this.logger.error(`[Fetcher] NewsAPI error (status: ${status}):`, error.message);
       return [];
     }
   }
@@ -330,9 +364,12 @@ class NewsService {
         params.topic = 'world';
       }
       const response = await this.gnewsApi.get('top-headlines', { params });
-      return this.normalizeGNewsArticles(response.data.articles || []);
+      const articles = response.data.articles || [];
+      this.logger.info(`[Fetcher] GNews fetched ${articles.length} articles for section: ${section}`);
+      return this.normalizeGNewsArticles(articles);
     } catch (error) {
-      this.logger.error('GNews error:', error.message);
+      const status = error.response?.status || 'N/A';
+      this.logger.error(`[Fetcher] GNews error (status: ${status}):`, error.message);
       return [];
     }
   }
@@ -377,26 +414,27 @@ class NewsService {
         });
       });
     }catch(e){ 
-      this.logger.warn('YouTube fail:', e.message); 
-      return []; 
-    }
-  }
-  async fetchFromRSS(url){
+      this.logger.warn('YouT  async fetchFromRSS(url){
     try{
-      const feed=await this.rssParser.parseURL(url);
-      return (feed.items||[]).map(it=>this.normalizeItem({
-        title:it.title||'', url:it.link||'', source:'RSS', lang:'und',
-        publishedAt:it.isoDate||it.pubDate||new Date().toISOString(),
-        reactions:0, followers:0, domain:domainFromUrl(it.link||''), _srcType:'rss'
+      const feed = await this.rssParser.parseURL(url);
+      const items = feed.items || [];
+      this.logger.info(`[Fetcher] RSS (${url}) fetched ${items.length} items.`);
+      return items.map(it => this.normalizeItem({
+        title: it.title || '',
+        url: it.link || '',
+        source: feed.title || domainFromUrl(url),
+        lang: 'en',
+        publishedAt: it.pubDate || it.isoDate || new Date().toISOString(),
+        reactions: 0,
+        followers: 0,
+        domain: domainFromUrl(it.link || ''),
+        _srcType: 'rss'
       }));
-    }catch(e){ 
-      this.logger.warn('RSS fail:', url, e.message); 
+    } catch(e){ 
+      this.logger.warn(`[Fetcher] RSS fail (${url}):`, e.message); 
       return []; 
     }
-  }
-
-  // -----------------------------
-  // 정규화 & 랭킹
+  }/ 정규화 & 랭킹
   // -----------------------------
   normalizeNewsAPIArticles(articles) {
     const thirtyDaysAgo = new Date();
