@@ -219,6 +219,48 @@ app.get('/api/article/:section/:id', async (req, res) => {
   }
 });
 
+// Detail endpoint (for frontend compatibility)
+app.get('/api/detail', async (req, res) => {
+  try {
+    const { section, id } = req.query;
+    const validSections = ['world', 'kr', 'korea', 'japan', 'buzz', 'tech', 'business'];
+    
+    if (!validSections.includes(section)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid section. Must be one of: ${validSections.join(', ')}`
+      });
+    }
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Article ID is required'
+      });
+    }
+    
+    const article = await newsService.getArticleById(section, id);
+    
+    if (!article) {
+      return res.status(404).json({
+        success: false,
+        error: 'Article not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: article
+    });
+  } catch (error) {
+    logger.error(`API Error - /api/detail:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch article details'
+    });
+  }
+});
+
 // Search endpoint
 app.get('/api/search', async (req, res) => {
   try {
