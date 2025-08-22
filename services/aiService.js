@@ -165,7 +165,7 @@ ${article}
     const startedAt = Date.now();
     const reqId = `req_${startedAt}_${Math.random().toString(36).slice(2, 8)}`;
 
-    logger.info({ reqId, model, timeoutMs }, "summarize start");
+    logger.info(`summarize start - reqId: ${reqId}, model: ${model}, timeout: ${timeoutMs}ms`);
 
     const { signal, cleanup } = this.withTimeout(undefined, timeoutMs);
 
@@ -183,7 +183,7 @@ ${article}
       }, {
         retries,
         onRetry: ({ attempt, delay, status, err }) => {
-          logger.warn({ reqId, attempt, delay, status, err: String(err) }, "retrying after error");
+          logger.warn(`retrying after error - reqId: ${reqId}, attempt: ${attempt}, delay: ${delay}ms, status: ${status}, error: ${String(err)}`);
         }
       });
 
@@ -193,12 +193,7 @@ ${article}
         throw new Error('Empty response from OpenAI');
       }
 
-      logger.info({
-        reqId,
-        elapsedMs: Date.now() - startedAt,
-        request_id: response?.id,
-        textLength: finalText?.length || 0
-      }, "summarize done");
+      logger.info(`summarize done - reqId: ${reqId}, elapsed: ${Date.now() - startedAt}ms, response_id: ${response?.id}, textLength: ${finalText?.length || 0}`);
 
       return finalText;
     } finally {
