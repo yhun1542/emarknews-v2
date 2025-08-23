@@ -85,29 +85,67 @@ const REDDIT_EP = { /* ... 기존 내용과 동일 ... */ };
 const YT_REGIONS = { /* ... 기존 내용과 동일 ... */ };
 const RSS_FEEDS = {
   world: [
+    // 최고 신뢰도 소스
     { url: 'https://feeds.reuters.com/reuters/topNews', name: 'Reuters Top News' },
-    { url: 'http://rss.cnn.com/rss/edition.rss', name: 'CNN World' },
+    { url: 'https://feeds.reuters.com/reuters/worldNews', name: 'Reuters World' },
     { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', name: 'BBC World' },
+    { url: 'http://rss.cnn.com/rss/edition.rss', name: 'CNN World' },
+    
+    // 추가 국제 소스
+    { url: 'https://www.theguardian.com/world/rss', name: 'The Guardian World' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', name: 'New York Times World' },
     { url: 'https://rss.dw.com/rdf/rss-en-all', name: 'Deutsche Welle' },
-    { url: 'https://feeds.reuters.com/reuters/worldNews', name: 'Reuters World' }
+    { url: 'https://feeds.washingtonpost.com/rss/world', name: 'Washington Post World' },
+    { url: 'https://www.aljazeera.com/xml/rss/all.xml', name: 'Al Jazeera' },
+    { url: 'https://feeds.skynews.com/feeds/rss/world.xml', name: 'Sky News World' }
   ],
   tech: [
+    // 테크 전문 미디어
     { url: 'https://feeds.feedburner.com/TechCrunch', name: 'TechCrunch' },
+    { url: 'http://feeds.arstechnica.com/arstechnica/index', name: 'Ars Technica' },
+    { url: 'https://www.engadget.com/rss.xml', name: 'Engadget' },
+    { url: 'https://feeds.feedburner.com/venturebeat/SZYF', name: 'VentureBeat' },
+    { url: 'https://feeds.feedburner.com/oreilly/radar', name: 'O\'Reilly Radar' },
+    
+    // 주요 언론사 테크 섹션
     { url: 'https://rss.cnn.com/rss/edition_technology.rss', name: 'CNN Tech' },
     { url: 'https://feeds.reuters.com/reuters/technologyNews', name: 'Reuters Tech' },
-    { url: 'https://feeds.feedburner.com/venturebeat/SZYF', name: 'VentureBeat' },
-    { url: 'https://feeds.feedburner.com/oreilly/radar', name: 'O\'Reilly Radar' }
+    { url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', name: 'BBC Technology' },
+    { url: 'https://www.theguardian.com/technology/rss', name: 'The Guardian Tech' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml', name: 'NYT Technology' },
+    
+    // 전문 테크 사이트
+    { url: 'https://feeds.feedburner.com/TheHackernews', name: 'The Hacker News' },
+    { url: 'https://feeds.feedburner.com/Mashable', name: 'Mashable' },
+    { url: 'https://www.wired.com/feed/rss', name: 'Wired' }
   ],
   business: [
+    // 경제 전문 미디어
     { url: 'https://feeds.reuters.com/reuters/businessNews', name: 'Reuters Business' },
+    { url: 'https://feeds.bloomberg.com/markets/news.rss', name: 'Bloomberg Markets' },
     { url: 'http://rss.cnn.com/rss/money_latest.rss', name: 'CNN Business' },
     { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', name: 'BBC Business' },
-    { url: 'https://feeds.bloomberg.com/markets/news.rss', name: 'Bloomberg Markets' }
+    
+    // 추가 경제 소스
+    { url: 'https://www.theguardian.com/business/rss', name: 'The Guardian Business' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml', name: 'NYT Business' },
+    { url: 'https://feeds.washingtonpost.com/rss/business', name: 'Washington Post Business' },
+    { url: 'https://feeds.marketwatch.com/marketwatch/topstories/', name: 'MarketWatch' },
+    { url: 'https://feeds.fortune.com/fortune/headlines', name: 'Fortune' },
+    { url: 'https://feeds.feedburner.com/entrepreneur/latest', name: 'Entrepreneur' }
   ],
   buzz: [
+    // 종합 뉴스 (인기/트렌딩)
     { url: 'https://feeds.reuters.com/reuters/topNews', name: 'Reuters Top' },
     { url: 'http://rss.cnn.com/rss/edition.rss', name: 'CNN Top' },
-    { url: 'https://feeds.bbci.co.uk/news/rss.xml', name: 'BBC News' }
+    { url: 'https://feeds.bbci.co.uk/news/rss.xml', name: 'BBC News' },
+    { url: 'https://www.theguardian.com/uk/rss', name: 'The Guardian UK' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', name: 'NYT Homepage' },
+    
+    // 엔터테인먼트 & 라이프스타일
+    { url: 'https://feeds.feedburner.com/people/headlines', name: 'People Magazine' },
+    { url: 'https://feeds.feedburner.com/time/topstories', name: 'Time Magazine' },
+    { url: 'https://rss.cnn.com/rss/edition_entertainment.rss', name: 'CNN Entertainment' }
   ],
   kr: [
     // 연합뉴스 (최고 신뢰도)
@@ -145,14 +183,32 @@ const SOURCE_WEIGHTS = {
   'bloomberg.com': 4.5,
   'wsj.com': 4.5,
   'ft.com': 4.5,
-  
-  // 일반 신뢰도 소스 (3.0-3.5)
-  'techcrunch.com': 3.5,
-  'venturebeat.com': 3.0,
-  'politico.com': 3.5,
   'theguardian.com': 4.0,
   'washingtonpost.com': 4.0,
   'nytimes.com': 4.5,
+  'aljazeera.com': 4.0,
+  'skynews.com': 3.5,
+  
+  // 테크 전문 미디어 (3.0-4.0)
+  'techcrunch.com': 3.5,
+  'arstechnica.com': 4.0,
+  'engadget.com': 3.5,
+  'venturebeat.com': 3.0,
+  'wired.com': 4.0,
+  'thehackernews.com': 3.0,
+  'mashable.com': 3.0,
+  
+  // 경제 전문 미디어 (3.5-4.5)
+  'marketwatch.com': 4.0,
+  'fortune.com': 4.0,
+  'entrepreneur.com': 3.5,
+  
+  // 엔터테인먼트 & 라이프스타일 (2.5-3.5)
+  'people.com': 3.0,
+  'time.com': 4.0,
+  
+  // 일반 신뢰도 소스 (3.0-3.5)
+  'politico.com': 3.5,
   
   // 한국 소스 (4.0-5.0)
   'joins.com': 4.5,
@@ -657,7 +713,14 @@ class NewsService {
     const rd = REDDIT_EP[section] || [];
     const yt = YT_REGIONS[section] || [];
     const rs = RSS_FEEDS[section] || [];
-    const tasks = [ this.fetchFromNewsAPI(section), this.fetchFromGNews(section), ...rd.map(r=>this.fetchFromRedditAPI(r)), ...yt.map(y=>this.fetchFromYouTubeTrending(y)), ...rs.map(r=>this.fetchFromRSS(r.url)) ];
+    const tasks = [ 
+      this.fetchFromNewsAPI(section), 
+      this.fetchFromNewsAPIEverything(section), // 새로운 everything 엔드포인트 추가
+      this.fetchFromGNews(section), 
+      ...rd.map(r=>this.fetchFromRedditAPI(r)), 
+      ...yt.map(y=>this.fetchFromYouTubeTrending(y)), 
+      ...rs.map(r=>this.fetchFromRSS(r.url)) 
+    ];
     if (section === 'kr') tasks.push(this.fetchFromNaver(section));
 
     const settled = await Promise.allSettled(tasks);
@@ -719,6 +782,96 @@ class NewsService {
         this.logger.error('No response received from NewsAPI.');
       } else {
         // 시나리오 A: 요청을 보내기 전에 에러가 발생했을 때 (ENOTFOUND 등)
+        this.logger.error('Error setting up request:', error.message);
+      }
+      this.logger.error('--------------------------------------');
+      return [];
+    }
+  }
+  
+  // NewsAPI Everything 엔드포인트 활용 - 키워드 기반 검색으로 더 많은 기사 수집
+  async fetchFromNewsAPIEverything(section) {
+    if (!process.env.NEWS_API_KEY) return [];
+    
+    // 섹션별 키워드 정의
+    const SECTION_KEYWORDS = {
+      world: [
+        'international politics', 'global economy', 'climate change', 'diplomacy',
+        'United Nations', 'European Union', 'G7', 'NATO', 'trade war',
+        'geopolitics', 'sanctions', 'peace talks', 'summit'
+      ],
+      tech: [
+        'artificial intelligence', 'machine learning', 'blockchain', 'cryptocurrency',
+        'semiconductor', 'quantum computing', 'cybersecurity', 'data privacy',
+        'cloud computing', 'IoT', '5G', 'autonomous vehicles', 'robotics',
+        'startup funding', 'IPO tech', 'big tech', 'silicon valley'
+      ],
+      business: [
+        'stock market', 'earnings report', 'merger acquisition', 'IPO',
+        'inflation', 'interest rates', 'GDP', 'unemployment', 'retail sales',
+        'corporate earnings', 'venture capital', 'private equity', 'banking',
+        'real estate market', 'commodity prices', 'economic policy'
+      ],
+      buzz: [
+        'viral', 'trending', 'social media', 'celebrity', 'entertainment',
+        'sports championship', 'breaking news', 'controversy', 'scandal',
+        'award ceremony', 'fashion week', 'movie premiere', 'music festival'
+      ],
+      kr: [
+        '한국 정치', '국정감사', '대통령', '국회', '선거',
+        '한국 경제', '삼성', 'LG', '현대', 'SK', 'TSMC',
+        'K-pop', '한류', '드라마', '영화', '문화'
+      ]
+    };
+
+    const keywords = SECTION_KEYWORDS[section] || SECTION_KEYWORDS.world;
+    
+    try {
+      // 7일 전 날짜 계산 (everything 엔드포인트는 더 짧은 기간 사용)
+      const from = new Date();
+      from.setDate(from.getDate() - 7);
+      
+      // 키워드를 3-4개씩 조합해서 여러 번 검색
+      const keywordBatches = [];
+      for (let i = 0; i < keywords.length; i += 3) {
+        keywordBatches.push(keywords.slice(i, i + 3));
+      }
+      
+      const allArticles = [];
+      
+      for (const batch of keywordBatches.slice(0, 5)) { // 최대 5개 배치만 처리
+        const query = batch.join(' OR ');
+        const params = {
+          q: query,
+          pageSize: 50, // everything 엔드포인트는 50개씩
+          sortBy: 'publishedAt',
+          from: from.toISOString().split('T')[0],
+          language: section === 'kr' ? 'ko' : 'en'
+        };
+        
+        try {
+          const response = await this.newsApiClient.get('everything', { params });
+          const articles = response.data.articles || [];
+          allArticles.push(...articles);
+          
+          // API 호출 간격 조절 (Rate Limit 방지)
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (batchError) {
+          this.logger.warn(`NewsAPI Everything batch failed for keywords "${query}":`, batchError.message);
+        }
+      }
+      
+      this.logger.info(`[Fetcher] NewsAPI Everything fetched ${allArticles.length} articles for section: ${section}`);
+      return this.normalizeNewsAPIArticles(allArticles);
+      
+    } catch (error) {
+      this.logger.error('--- [Fetcher] NewsAPI Everything Detailed Error ---');
+      if (error.response) {
+        this.logger.error(`Status: ${error.response.status}`);
+        this.logger.error('Data:', error.response.data);
+      } else if (error.request) {
+        this.logger.error('No response received from NewsAPI Everything.');
+      } else {
         this.logger.error('Error setting up request:', error.message);
       }
       this.logger.error('--------------------------------------');
