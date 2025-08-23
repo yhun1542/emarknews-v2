@@ -285,17 +285,30 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="bottom-back-button" onclick="closeWindow()">✕ 닫기</button>
+            <button class="bottom-back-button" onclick="closeWindow()">닫기</button>
         </div>
     </div>
 
     <script>
         function closeWindow() {
-            // 새 탭에서 열렸으면 탭 닫기
-            if (window.opener && !window.opener.closed) {
-                window.close();
-            } else {
-                // 직접 접근했거나 부모 창이 없으면 메인페이지로
+            try {
+                // 브라우저 히스토리가 있으면 뒤로가기
+                if (window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+                
+                // 새 탭에서 열렸으면 탭 닫기 시도
+                if (window.opener && !window.opener.closed) {
+                    window.close();
+                    return;
+                }
+                
+                // 모든 방법이 실패하면 메인페이지로 이동
+                window.location.href = '/';
+            } catch (error) {
+                // 오류 발생 시 메인페이지로 이동
+                console.error('Close window error:', error);
                 window.location.href = '/';
             }
         }
