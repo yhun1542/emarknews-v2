@@ -1396,8 +1396,13 @@ class NewsService {
    * @returns {Promise<object>} 기사 데이터 또는 에러 메시지
    */
   async getArticleById(section, articleId) {
-    // fast, full 순서로 캐시를 확인합니다.
-    const keysToTry = [`${section}_full`, `${section}_fast`];
+    // 버전이 포함된 캐시 키들을 우선 확인
+    const keysToTry = [
+      `${section}_full_${RATING_SERVICE_VERSION}`,
+      `${section}_fast_${RATING_SERVICE_VERSION}`,
+      `${section}_full`,
+      `${section}_fast`
+    ];
     this.logger.info(`[Detail] Searching for articleId: ${articleId} in section: ${section}`);
 
     for (const key of keysToTry) {
