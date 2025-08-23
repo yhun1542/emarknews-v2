@@ -285,14 +285,19 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="bottom-back-button" onclick="goBack()">← 뒤로가기</button>
+            <button class="bottom-back-button" onclick="closeWindow()">✕ 닫기</button>
         </div>
     </div>
 
     <script>
-        function goBack() {
-            // 가장 간단하고 확실한 방법: 바로 메인페이지로 이동
-            window.location.href = '/';
+        function closeWindow() {
+            // 새 탭에서 열렸으면 탭 닫기
+            if (window.opener && !window.opener.closed) {
+                window.close();
+            } else {
+                // 직접 접근했거나 부모 창이 없으면 메인페이지로
+                window.location.href = '/';
+            }
         }
 
         function formatDateTime(dateString) {
