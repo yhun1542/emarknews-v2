@@ -687,7 +687,7 @@ class NewsService {
       from.setDate(from.getDate() - 14);
       
       const params = { 
-        pageSize: 50, 
+        pageSize: 100, // 기존 50에서 100으로 변경 - 더 많은 뉴스 수집
         sortBy: 'publishedAt',
         from: from.toISOString().split('T')[0] // YYYY-MM-DD 형식
       };
