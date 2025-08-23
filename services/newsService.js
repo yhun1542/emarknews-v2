@@ -655,7 +655,11 @@ class NewsService {
         else { 
           // API 키가 있을 때만 YouTube/GNews 사용
           if (process.env.GNEWS_API_KEY && process.env.GNEWS_API_KEY !== 'your_gnews_api_key_here') {
-            phase2 = [ ...rs.slice(4).map(r=>this.fetchFromRSS(r.url)), this.fetchFromGNews(section) ];
+            phase2 = [ 
+              ...rs.slice(4).map(r=>this.fetchFromRSS(r.url)), 
+              this.fetchFromGNews(section),
+              this.fetchFromGNewsEverything(section) // GNews Everything 추가
+            ];
           } else {
             phase2 = [ ...rs.slice(4).map(r=>this.fetchFromRSS(r.url)) ];
           }
@@ -720,8 +724,9 @@ class NewsService {
     const rs = RSS_FEEDS[section] || [];
     const tasks = [ 
       this.fetchFromNewsAPI(section), 
-      this.fetchFromNewsAPIEverything(section), // 새로운 everything 엔드포인트 추가
+      this.fetchFromNewsAPIEverything(section), // NewsAPI everything 엔드포인트
       this.fetchFromGNews(section), 
+      this.fetchFromGNewsEverything(section), // GNews everything 엔드포인트 추가
       ...rd.map(r=>this.fetchFromRedditAPI(r)), 
       ...yt.map(y=>this.fetchFromYouTubeTrending(y)), 
       ...rs.map(r=>this.fetchFromRSS(r.url)) 
@@ -924,6 +929,116 @@ class NewsService {
       return [];
     }
   }
+  
+  // GNews Everything 엔드포인트 - 키워드 기반 검색으로 다양하고 흥미로운 기사 수집
+  async fetchFromGNewsEverything(section) {
+    if (!process.env.GNEWS_API_KEY) return [];
+    
+    const GNEWS_KEYWORDS = {
+      world: [
+        // 정치/국제
+        ['breaking news', 'urgent', 'crisis'],
+        ['viral', 'trending', 'shocking'],
+        ['exclusive', 'investigation', 'scandal'],
+        ['celebrity', 'entertainment', 'hollywood'],
+        ['climate change', 'environment', 'disaster'],
+        ['technology breakthrough', 'AI', 'innovation'],
+        ['sports', 'olympics', 'championship']
+      ],
+      tech: [
+        ['AI breakthrough', 'artificial intelligence', 'machine learning'],
+        ['cryptocurrency', 'bitcoin', 'blockchain'],
+        ['startup', 'venture capital', 'IPO'],
+        ['cybersecurity', 'hacking', 'data breach'],
+        ['space technology', 'SpaceX', 'NASA'],
+        ['electric vehicle', 'Tesla', 'autonomous'],
+        ['viral tech', 'trending gadget', 'innovation']
+      ],
+      business: [
+        ['market crash', 'stock surge', 'earnings'],
+        ['merger', 'acquisition', 'IPO'],
+        ['cryptocurrency', 'bitcoin', 'trading'],
+        ['startup funding', 'venture capital', 'unicorn'],
+        ['economic crisis', 'inflation', 'recession'],
+        ['viral business', 'trending company', 'breakthrough'],
+        ['CEO scandal', 'corporate news', 'leadership']
+      ],
+      buzz: [
+        ['viral', 'trending', 'social media'],
+        ['celebrity scandal', 'entertainment news', 'hollywood'],
+        ['meme', 'internet culture', 'influencer'],
+        ['lifestyle', 'fashion', 'beauty'],
+        ['food trend', 'restaurant', 'cooking'],
+        ['travel', 'vacation', 'destination'],
+        ['health trend', 'fitness', 'wellness']
+      ],
+      kr: [
+        ['한국', '서울', 'K-pop'],
+        ['삼성', 'LG', '현대'],
+        ['정치', '대통령', '국회'],
+        ['경제', '주식', '부동산'],
+        ['연예인', '드라마', '영화'],
+        ['스포츠', '축구', '야구'],
+        ['바이럴', '트렌드', '화제']
+      ],
+      jp: [
+        ['Japan', 'Tokyo', 'Japanese'],
+        ['Sony', 'Nintendo', 'Toyota'],
+        ['anime', 'manga', 'culture'],
+        ['earthquake', 'tsunami', 'disaster'],
+        ['technology', 'robot', 'innovation'],
+        ['viral Japan', 'trending', 'popular'],
+        ['business Japan', 'economy', 'market']
+      ]
+    };
+
+    const keywords = GNEWS_KEYWORDS[section] || GNEWS_KEYWORDS.world;
+    const allArticles = [];
+    
+    try {
+      // 키워드 그룹별로 검색 (3개씩 처리)
+      for (let i = 0; i < Math.min(keywords.length, 3); i++) {
+        const keywordGroup = keywords[i];
+        const query = keywordGroup.join(' OR ');
+        
+        const params = {
+          token: process.env.GNEWS_API_KEY,
+          q: query,
+          max: 20,
+          lang: section === 'kr' ? 'ko' : (section === 'jp' ? 'ja' : 'en'),
+          from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 7일 전
+        };
+        
+        const response = await this.gnewsApi.get('search', { params });
+        const articles = response.data.articles || [];
+        
+        allArticles.push(...articles.map(article => ({
+          ...article,
+          _searchKeywords: keywordGroup.join(', ')
+        })));
+        
+        this.logger.info(`[GNews Everything] Fetched ${articles.length} articles for keywords: ${keywordGroup.join(', ')}`);
+        
+        // API Rate Limit 방지
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      this.logger.info(`[GNews Everything] Total fetched ${allArticles.length} articles for section: ${section}`);
+      return this.normalizeGNewsArticles(allArticles);
+      
+    } catch (error) {
+      this.logger.error('--- [Fetcher] GNews Everything API Error ---');
+      if (error.response) {
+        this.logger.error(`Status: ${error.response.status}`);
+        this.logger.error('Data:', error.response.data);
+      } else {
+        this.logger.error('Error:', error.message);
+      }
+      this.logger.error('------------------------------------------');
+      return [];
+    }
+  }
+  
   async fetchFromNaver(section) {
     if (!process.env.NAVER_CLIENT_ID || !process.env.NAVER_CLIENT_SECRET) return [];
     try {
