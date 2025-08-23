@@ -253,19 +253,18 @@
             }
 
             try {
-                // 프록시를 통해 CORS 우회
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://emarknews-v2-production.up.railway.app/api/article/${section}/${id}`)}`;
+                // 같은 도메인에서 직접 API 호출
+                const apiUrl = `/api/article/${section}/${id}`;
                 
-                console.log('Fetching from proxy:', proxyUrl);
+                console.log('Fetching from API:', apiUrl);
                 
-                const response = await fetch(proxyUrl);
+                const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
                     throw new Error('기사를 찾을 수 없습니다.');
                 }
 
-                const proxyResult = await response.json();
-                const result = JSON.parse(proxyResult.contents);
+                const result = await response.json();
                 
                 console.log('API Response:', result);
                 
