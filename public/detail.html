@@ -291,26 +291,8 @@
 
     <script>
         function goBack() {
-            try {
-                // 먼저 브라우저 히스토리로 뒤로가기 시도
-                if (window.history.length > 1 && document.referrer) {
-                    window.history.back();
-                    
-                    // 1초 후에도 같은 페이지에 있으면 강제로 메인페이지로 이동
-                    setTimeout(() => {
-                        if (window.location.pathname.includes('detail.html')) {
-                            window.location.href = '/';
-                        }
-                    }, 1000);
-                } else {
-                    // 히스토리가 없거나 referrer가 없으면 바로 메인페이지로
-                    window.location.href = '/';
-                }
-            } catch (error) {
-                // 오류 발생 시 메인페이지로
-                console.error('뒤로가기 오류:', error);
-                window.location.href = '/';
-            }
+            // 가장 간단하고 확실한 방법: 바로 메인페이지로 이동
+            window.location.href = '/';
         }
 
         function formatDateTime(dateString) {
