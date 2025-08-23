@@ -28,10 +28,10 @@ class RatingService {
   async calculateRating(article) {
     try {
       if (!article || !article.title) {
-        return 3.0;
+        return 2.5; // 기본 점수 3.0 → 2.5로 변경
       }
 
-      let score = 3.0; // Base score
+      let score = 2.5; // Base score 3.0 → 2.5로 변경
       const text = `${article.title} ${article.description || ''}`.toLowerCase();
 
       // Check for urgent keywords (+2.0)
@@ -89,7 +89,7 @@ class RatingService {
 
     } catch (error) {
       logger.error('Rating calculation error:', error);
-      return 3.0;
+      return 2.5; // 에러 시 기본 점수도 3.0 → 2.5로 변경
     }
   }
 
@@ -143,7 +143,7 @@ class RatingService {
 
   // Calculate importance score for sorting
   getImportanceScore(article) {
-    const rating = article.rating || 3.0;
+    const rating = article.rating || 2.5; // 기본값 3.0 → 2.5로 변경
     const tags = article.tags || [];
     
     let importance = rating;

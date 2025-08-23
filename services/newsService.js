@@ -11,7 +11,7 @@ const AIService = require('./aiService'); // AI 서비스 import
 const RatingService = require('./ratingService'); // Rating 서비스 import
 
 // 🔧 캐시 버전 관리: ratingService 변경 시 이 버전을 업데이트하면 자동으로 새 캐시 사용
-const RATING_SERVICE_VERSION = "v2.1";
+const RATING_SERVICE_VERSION = "v2.2"; // 기본 점수 변경으로 버전 업데이트
 
 // Redis 클라이언트
 let redis;
@@ -290,8 +290,8 @@ class NewsService {
   }
 
   // ====== 공개 API ======
-  async getSectionFast(section='buzz'){ return this._getFast(section); }
-  async getSectionFull(section='buzz'){ return this._getFull(section); }
+  async getSectionFast(section='buzz', readArticles=[]){ return this._getFast(section, readArticles); }
+  async getSectionFull(section='buzz', readArticles=[]){ return this._getFull(section, readArticles); }
   
   // ====== AI 연동 메서드 ======
   async _enrichArticlesWithAI(articles, section = 'world') {
@@ -545,8 +545,10 @@ class NewsService {
   }
 
   // ====== 내부: 빠른 길 ======
-  async _getFast(section){
-    const key=`${section}_fast_${RATING_SERVICE_VERSION}`;
+  async _getFast(section, readArticles = []){
+    // 읽은 기사가 있으면 캐시 키에 포함하여 개인화
+    const readKey = readArticles.length > 0 ? `_read_${readArticles.slice(0, 10).join('_')}` : '';
+    const key=`${section}_fast_${RATING_SERVICE_VERSION}${readKey}`;
     let cached = null;
     if (redis) { try { cached = await redis.get(key); } catch (e) { this.logger.warn('Redis get failed:', e.message); } }
     else { cached = memoryCache.get(key); }
@@ -604,7 +606,7 @@ class NewsService {
     const unique = deduplicate(filtered);
     this.logger.info(`[${section}] Step 3: After deduplication, ${unique.length} unique articles remain.`);
     
-    const rankedAll = await this.rankAndSort(section, unique);
+    const rankedAll = await this.rankAndSort(section, unique, readArticles);
     const ranked = rankedAll.slice(0,FAST.FIRST_BATCH);
     this.logger.info(`[${section}] Step 4: After ranking, top ${ranked.length} articles selected.`);
     const initial = { success: true, data: ranked, section, total:ranked.length, partial:true, timestamp:new Date().toISOString() };
@@ -1318,7 +1320,7 @@ class NewsService {
     return Array.from(tags);
   }
 
-  async rankAndSort(section, items) {
+  async rankAndSort(section, items, readArticles = []) {
     if (!items || items.length === 0) return [];
     const freshness = (ageMin) => Math.max(0, 1 - (ageMin / (24 * 60)));
     const w = SECTION_WEIGHTS[section] || DEFAULT_WEIGHTS.world;
@@ -1333,7 +1335,14 @@ class NewsService {
       const score = (w.f * f_score) + (w.v * v_score) + (w.e * e_score) + (w.s * s_score);
       
       // ratingService를 사용한 고급 평점 계산
-      const rating = await this.ratingService.calculateRating(it);
+      let rating = await this.ratingService.calculateRating(it);
+      
+      // 🔥 읽은 기사 페널티: 읽은 기사는 평점에서 2점 차감하여 뒤로 보냄
+      const isRead = readArticles.includes(it.id);
+      if (isRead) {
+        rating = Math.max(0.1, rating - 2.0); // 최소 0.1점 유지
+        this.logger.debug(`[ReadPenalty] Article ${it.id} penalty applied: ${rating + 2.0} → ${rating}`);
+      }
       
       return { 
           ...it, 

@@ -258,6 +258,7 @@ app.get('/api/:section/fast', async (req, res) => {
 
   try {
     const { section } = req.params;
+    const { read } = req.query; // 읽은 기사 ID 목록 (쉼표로 구분)
     const validSections = ['world', 'kr', 'korea', 'japan', 'buzz', 'tech', 'business'];
     
     if (!validSections.includes(section)) {
@@ -268,7 +269,10 @@ app.get('/api/:section/fast', async (req, res) => {
       });
     }
 
-    const result = await newsService.getSectionFast(section);
+    // 읽은 기사 목록 파싱
+    const readArticles = read ? read.split(',').map(id => id.trim()).filter(id => id) : [];
+    
+    const result = await newsService.getSectionFast(section, readArticles);
     clearTimeout(timeout);
     
     if (!res.headersSent) {
