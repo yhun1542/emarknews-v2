@@ -640,17 +640,30 @@
             }
 
             addDetailButtonListeners() {
-                document.querySelectorAll('.view-details-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        e.preventDefault();
+                // 기존 이벤트 리스너 제거를 위해 setTimeout 사용
+                setTimeout(() => {
+                    const buttons = document.querySelectorAll('.view-details-btn');
+                    console.log('Adding event listeners to', buttons.length, 'buttons');
+                    
+                    buttons.forEach((button, index) => {
                         const articleId = button.dataset.articleId;
-                        if (articleId) {
-                            this.openDetailPage(articleId);
-                        } else {
-                            alert('기사 정보를 찾을 수 없습니다.');
-                        }
+                        
+                        // 기존 이벤트 제거 후 새로 추가
+                        const newButton = button.cloneNode(true);
+                        button.parentNode.replaceChild(newButton, button);
+                        
+                        newButton.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            console.log('Detail button clicked, articleId:', articleId);
+                            
+                            if (articleId) {
+                                this.openDetailPage(articleId);
+                            } else {
+                                alert('기사 정보를 찾을 수 없습니다.');
+                            }
+                        });
                     });
-                });
+                }, 100);
             }
 
             openDetailPage(articleId) {
