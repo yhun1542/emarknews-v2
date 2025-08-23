@@ -8,7 +8,10 @@ class AIService {
     this.cache = new CacheService();
     this.queue = [];
     this.processing = false;
-    this.concurrency = 3; // Responses API는 더 안정적이므로 동시성 줄임
+    this.concurrency = 3; // 동시성 제어
+    this.remainingRequests = 50; // 초기 추정값
+    this.remainingTokens = 4000; // 초기 추정값
+    this.deadLetterQueue = []; // 실패한 작업들
     
     if (process.env.OPENAI_API_KEY) {
       this.client = new OpenAI({
@@ -181,6 +184,8 @@ ${article}
         }
       });
 
+      this.updateRateLimits(response.headers || {});
+
       const finalText = response.choices[0]?.message?.content?.trim();
       
       if (!finalText) {
@@ -256,6 +261,8 @@ ${article}
         });
       });
 
+      this.updateRateLimits(response.headers || {});
+
       const translated = response.choices[0]?.message?.content?.trim();
       
       if (!translated) {
@@ -306,12 +313,44 @@ ${article}
     }
   }
 
+  updateRateLimits(headers) {
+    if (headers) {
+      this.remainingRequests = parseInt(headers['x-ratelimit-remaining-requests'] || this.remainingRequests);
+      this.remainingTokens = parseInt(headers['x-ratelimit-remaining-tokens'] || this.remainingTokens);
+    }
+  }
+
+  logOpenAIError(error, context) {
+    if (error.response) {
+      logger.error(`[OpenAI API Error - ${context}] Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`);
+      if (error.response.status === 429) {
+        logger.warn('OpenAI rate limit exceeded');
+      }
+    } else if (error.request) {
+      logger.error(`[OpenAI API No Response - ${context}] Timeout or Network error: ${error.message}`);
+    } else {
+      logger.error(`[OpenAI API Request Setup Error - ${context}]: ${error.message}`);
+    }
+  }
+
+  isKorean(text) {
+    if (!text) return false;
+    const koreanRegex = /[\uac00-\ud7a3]/g;
+    const textLength = text.replace(/\s+/g, '').length;
+    if (textLength === 0) return false;
+    const koreanMatches = (text.match(koreanRegex) || []).length;
+    return (koreanMatches / textLength) > 0.3; // 30% 이상이 한글이면 한국어로 간주
+  }
+
   getStatus() {
     return {
       initialized: !!this.client,
       queueLength: this.queue.length,
       processing: this.processing,
-      concurrency: this.concurrency
+      concurrency: this.concurrency,
+      remainingRequests: this.remainingRequests,
+      remainingTokens: this.remainingTokens,
+      deadLetterQueueSize: this.deadLetterQueue.length
     };
   }
 }

@@ -3,560 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상세보기 - EmarkNews</title>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg">
+    <title>기사 상세보기 - EmarkNews</title>
     <style>
-        :root {
-            --primary-color: #5a4fcf;
-            --primary-dark: #4338ca;
-            --background-color: #f8f9fa;
-            --surface-color: #ffffff;
-            --text-color: #1e293b;
-            --text-secondary: #64748b;
-            --text-content: #334155;
-            --border-color: #e2e8f0;
-        }
-        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Pretendard', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+            padding: 20px;
         }
-        
-        .header {
-            background: var(--surface-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        
-        .header-container {
+
+        .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 0 1rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            text-decoration: none;
-            color: var(--text-color);
         }
 
-        .logo-svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        .logo-text {
-            font-size: 22px;
-            font-weight: 800;
-        }
-        
-        .logo-com {
-            color: var(--primary-color);
-            font-size: 16px;
-            font-weight: 700;
-            position: relative;
-            top: 1px;
-        }
-
-        .content-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        #loading {
-            text-align: center;
-            padding: 4rem;
-            font-size: 1.2rem;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .article-content {
-            display: none;
-        }
-        
-        .article-content.visible {
-            display: block;
-        }
-
-        .article-header {
-            background: var(--surface-color);
-            padding: 2rem;
+        .header {
+            background: white;
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            color: #4CAF50;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
         }
 
         .article-title {
-            font-size: 2rem;
-            font-weight: 800;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 15px;
             line-height: 1.3;
-            margin-bottom: 1.5rem;
         }
 
         .article-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 1rem;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 10px;
+        }
+
+        .source-info {
+            color: #666;
         }
 
         .source {
+            color: #4CAF50;
             font-weight: 600;
-            color: var(--primary-color);
-            margin-right: 0.5rem;
         }
 
-        .rating-badge {
-            background: var(--primary-dark);
+        .rating {
+            background: #4CAF50;
             color: white;
-            padding: 0.3rem 0.7rem;
+            padding: 5px 10px;
             border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        
-        .rating-star {
-            color: #FFD700;
+            font-size: 0.9rem;
+            font-weight: bold;
         }
 
-        .tabs-container {
-            background: var(--surface-color);
+        .content {
+            background: white;
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 1.5rem;
+        .section-title {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
         }
-
-        .tab-button {
-            padding: 0.8rem 1.5rem;
-            border: none;
-            background: none;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: -2px;
-        }
-
-        .tab-button.active {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-        }
-
-        .tab-content {
-            max-height: 75vh;
-            overflow-y: auto;
-            padding-right: 1rem;
-        }
-
-        .tab-content::-webkit-scrollbar { display: none; }
-        .tab-content { -ms-overflow-style: none; scrollbar-width: none; }
 
         .summary-point {
-            font-size: 1rem;
+            margin-bottom: 15px;
+            padding-left: 20px;
+            position: relative;
             line-height: 1.8;
-            margin-bottom: 1rem;
+        }
+
+        .summary-point::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .translation-content {
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .actions {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
-            align-items: flex-start;
-            color: var(--text-content);
-        }
-        
-        .summary-bullet {
-            color: var(--primary-color);
-            margin-right: 0.8rem;
-            flex-shrink: 0;
-            padding-top: 4px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
-        .translation-text {
-            font-size: 1rem;
-            line-height: 1.9;
-            color: var(--text-content);
-            white-space: pre-wrap;
-            background-color: #f8f9ff;
-            padding: 1.5rem;
-            border-radius: 8px;
-        }
-
-        .action-footer {
-            margin-top: 2rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .action-button {
-            display: block;
-            width: 100%;
-            padding: 0.8rem;
+        .btn {
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            text-align: center;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             transition: all 0.3s;
         }
 
-        .close-button {
-            background-color: var(--border-color);
-            color: var(--text-color);
-        }
-        
-        .close-button:hover {
-            background-color: #cbd5e1;
-        }
-
-        .link-button {
-            background: var(--primary-color);
+        .btn-primary {
+            background: #4CAF50;
             color: white;
         }
-        
-        .link-button:hover {
-            background: var(--primary-dark);
+
+        .btn-primary:hover {
+            background: #45a049;
         }
 
-        .error-message {
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .loading {
             text-align: center;
-            padding: 2rem;
-            color: #dc2626;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         @media (max-width: 768px) {
-            .header-container {
-                padding: 0 1rem;
-            }
-            
-            .logo-svg {
-                width: 28px;
-                height: 28px;
-            }
-            
-            .logo-text {
-                font-size: 20px;
-            }
-            
-            .logo-com {
-                font-size: 14px;
+            body {
+                padding: 10px;
             }
             
             .article-title {
-                font-size: 1.6rem;
+                font-size: 1.5rem;
             }
             
-            .content-container {
-                margin: 1rem auto;
+            .article-meta {
+                flex-direction: column;
+                align-items: flex-start;
             }
             
-            .tabs-container, .article-header {
-                padding: 1.5rem;
-                border-radius: 0;
-            }
-            
-            .tab-button {
-                font-size: 1rem;
-                padding: 0.8rem 1rem;
-            }
-            
-            .action-footer {
+            .actions {
                 flex-direction: column;
             }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-container">
-            <a href="/" class="logo">
-                <img src="/logo.svg" alt="EmarkNews Logo" class="logo-svg" />
-                <span class="logo-text">EmarkNews</span><span class="logo-com">.com</span>
-            </a>
-        </div>
-    </header>
-
-    <main class="content-container">
-        <div id="loading">
-            <div class="spinner"></div>
-            <p>기사 내용을 불러오는 중입니다...</p>
-        </div>
-        
-        <div class="article-content" id="article-content">
-            <header class="article-header">
-                <h1 id="article-title" class="article-title"></h1>
-                <div class="article-meta">
-                    <div id="source-time" class="source-time"></div>
-                    <div id="rating-badge" class="rating-badge"></div>
-                </div>
-            </header>
-
-            <div class="tabs-container">
-                <div class="tabs">
-                    <button id="btn-summary" class="tab-button active" onclick="showTab('summary')">✨ AI 상세 요약</button>
-                    <button id="btn-translation" class="tab-button" onclick="showTab('translation')">🌍 원문 번역</button>
-                </div>
-
-                <div id="tab-summary" class="tab-content">
-                    <div id="summary-content" class="summary-content"></div>
-                    <div class="action-footer">
-                        <a id="link-summary" href="#" target="_blank" class="action-button link-button">🔗 원문 보기</a>
-                        <button class="action-button close-button" onclick="window.history.back()">← 뒤로가기</button>
-                    </div>
-                </div>
-
-                <div id="tab-translation" class="tab-content" style="display: none;">
-                    <div id="translation-text" class="translation-text"></div>
-                    <div class="action-footer">
-                        <a id="link-translation" href="#" target="_blank" class="action-button link-button">🔗 원문 보기</a>
-                        <button class="action-button close-button" onclick="window.history.back()">← 뒤로가기</button>
-                    </div>
-                </div>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="logo">EmarkNews.com</a>
+            <div id="article-header">
+                <div class="loading">기사를 불러오는 중...</div>
             </div>
         </div>
 
-        <div id="error" class="error-message" style="display: none;">
-            <h3>오류: 기사를 불러올 수 없습니다.</h3>
-            <p id="error-text"></p>
-            <button onclick="window.history.back()" class="action-button close-button" style="max-width: 200px; margin: 1rem auto;">
-                뒤로가기
-            </button>
+        <div class="content" id="article-content" style="display: none;">
+            <div class="section-title">✨ AI 상세 요약</div>
+            <div id="summary-content" style="margin-bottom: 30px;">요약을 불러오는 중...</div>
+            
+            <div class="section-title">🌍 원문 번역</div>
+            <div id="translation-content" class="translation-content">번역을 불러오는 중...</div>
         </div>
-    </main>
+
+        <div class="actions" id="article-actions" style="display: none;">
+            <a id="original-link" href="#" class="btn btn-primary" target="_blank">🔗 원문 보기</a>
+            <button onclick="history.back()" class="btn btn-secondary">← 뒤로가기</button>
+        </div>
+
+        <div id="error-message" class="error" style="display: none;">
+            기사를 불러올 수 없습니다.
+        </div>
+    </div>
 
     <script>
-        // Tab switching
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
-            document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
-            
-            document.getElementById('tab-' + tabName).style.display = 'block';
-            document.getElementById('btn-' + tabName).classList.add('active');
+        // URL 파라미터 가져오기
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                section: params.get('section'),
+                id: params.get('id')
+            };
         }
 
-        // Time calculation
+        // 시간 차이 계산
         function getTimeAgo(publishedAt) {
+            if (!publishedAt) return '';
             const now = new Date();
             const published = new Date(publishedAt);
-            if (isNaN(published.getTime())) return "";
-            
-            const diffMinutes = Math.floor((now - published) / 60000);
-            const diffHours = Math.floor(diffMinutes / 60);
-            const diffDays = Math.floor(diffHours / 24);
-            
-            if (diffMinutes < 1) return "방금 전";
-            if (diffMinutes < 60) return `${diffMinutes}분 전`;
+            if (isNaN(published.getTime())) return '';
+            const diffMs = now - published;
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return '방금 전';
+            if (diffMins < 60) return `${diffMins}분 전`;
+            const diffHours = Math.floor(diffMins / 60);
             if (diffHours < 24) return `${diffHours}시간 전`;
-            return `${diffDays}일 전`;
+            return `${Math.floor(diffHours / 24)}일 전`;
         }
 
-        // Page initialization
-        document.addEventListener('DOMContentLoaded', async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const articleId = urlParams.get('id');
-            const section = urlParams.get('section');
-
-            if (!articleId || !section) {
-                showError('기사 정보를 찾을 수 없습니다.');
+        // 기사 데이터 로드
+        async function loadArticle() {
+            const { section, id } = getUrlParams();
+            
+            console.log('Loading article with params:', { section, id });
+            
+            if (!section || !id) {
+                showError('잘못된 접근입니다.');
                 return;
             }
 
-            // Try to get from sessionStorage first
-            const storageKey = `article_${section}_${articleId}`;
-            let article = null;
-            
-            const storedData = sessionStorage.getItem(storageKey);
-            if (storedData) {
-                try {
-                    article = JSON.parse(storedData);
-                } catch (e) {
-                    console.error('Failed to parse stored article:', e);
+            try {
+                // 프록시를 통해 CORS 우회
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://emarknews-v2-production.up.railway.app/api/article/${section}/${id}`)}`;
+                
+                console.log('Fetching from proxy:', proxyUrl);
+                
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error('기사를 찾을 수 없습니다.');
                 }
-            }
 
-            // If not in sessionStorage, fetch from API
-            if (!article) {
-                try {
-                    const response = await fetch(`/api/article/${section}/${articleId}`);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch article');
-                    }
-                    
-                    const data = await response.json();
-                    if (data.success && data.data) {
-                        article = data.data;
-                        
-                        // If article needs AI processing
-                        if (!article.titleKo && article.language !== 'ko') {
-                            // Request translation
-                            try {
-                                const transResponse = await fetch('/api/translate', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ text: article.title })
-                                });
-                                
-                                if (transResponse.ok) {
-                                    const transData = await transResponse.json();
-                                    article.titleKo = transData.data.translated;
-                                }
-                            } catch (e) {
-                                console.error('Translation failed:', e);
-                            }
-                        }
-                        
-                        // Generate summary if not exists
-                        if (!article.summaryPoints || article.summaryPoints.length === 0) {
-                            try {
-                                const summaryResponse = await fetch('/api/summarize', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        text: article.content || article.description,
-                                        maxPoints: 5,
-                                        detailed: true
-                                    })
-                                });
-                                
-                                if (summaryResponse.ok) {
-                                    const summaryData = await summaryResponse.json();
-                                    let summary = summaryData.data.summary;
-                                    
-                                    // "2) 상세요약:" 문구 제거 및 정리
-                                    if (typeof summary === 'string') {
-                                        summary = summary
-                                            .replace(/^1\)\s*카드뉴스용[^:]*:\s*/gm, '') // "1) 카드뉴스용..." 제거
-                                            .replace(/^2\)\s*상세요약:\s*/gm, '') // "2) 상세요약:" 제거
-                                            .split('\n')
-                                            .filter(line => line.trim() && !line.match(/^[12]\)/)) // 빈 줄과 번호 줄 제거
-                                            .map(line => line.replace(/^[•\-*]\s*/, '').trim()) // 불릿 포인트 제거
-                                            .filter(line => line.length > 0);
-                                    }
-                                    
-                                    article.fullSummaryPoints = Array.isArray(summary) ? summary : [summary];
-                                }
-                            } catch (e) {
-                                console.error('Summary generation failed:', e);
-                            }
-                        }
-                    } else {
-                        throw new Error('Invalid API response');
-                    }
-                } catch (error) {
-                    console.error('Failed to load article:', error);
-                    showError('기사를 불러올 수 없습니다.');
-                    return;
+                const proxyResult = await response.json();
+                const result = JSON.parse(proxyResult.contents);
+                
+                console.log('API Response:', result);
+                
+                if (!result.success || !result.data) {
+                    throw new Error('기사 데이터가 없습니다.');
                 }
+
+                renderArticle(result.data);
+                
+            } catch (error) {
+                console.error('Error loading article:', error);
+                showError('기사를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
             }
-
-            // Render article
-            renderArticle(article);
-        });
-
-        function showError(message) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('article-content').style.display = 'none';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error-text').textContent = message;
         }
 
+        // 기사 렌더링
         function renderArticle(article) {
-            // Hide loading, show content
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('article-content').classList.add('visible');
+            console.log('Rendering article:', article);
             
-            // Set page title
-            const displayTitle = article.titleKo || article.title;
-            document.title = `${displayTitle} - EmarkNews`;
-            
-            // Render header
-            document.getElementById('article-title').textContent = displayTitle;
-            
+            // 제목과 메타 정보
+            const title = article.titleKo || article.title || '제목 없음';
             const timeAgo = getTimeAgo(article.publishedAt);
-            document.getElementById('source-time').innerHTML = `
-                <span class="source">${article.source || 'Unknown'}</span>
-                <span>· ${timeAgo}</span>
-            `;
+            const rating = article.rating || '2.0';
             
-            document.getElementById('rating-badge').innerHTML = `
-                <span class="rating-star">⭐</span>${(article.rating || 3.0).toFixed(1)}
+            document.getElementById('article-header').innerHTML = `
+                <div class="article-title">${title}</div>
+                <div class="article-meta">
+                    <div class="source-info">
+                        <span class="source">${article.source || 'Unknown'}</span>
+                        <span>· ${timeAgo}</span>
+                    </div>
+                    <div class="rating">⭐${parseFloat(rating).toFixed(1)}</div>
+                </div>
             `;
 
-            // Render summary
-            const summaryPoints = article.fullSummaryPoints || article.summaryPoints || 
-                                 [article.descriptionKo || article.description || '요약 정보가 없습니다.'];
-            const summaryHtml = summaryPoints.map(point =>
-                `<div class="summary-point">
-                    <span class="summary-bullet">•</span>
-                    <span class="summary-text">${point}</span>
-                </div>`
+            // 요약 내용
+            const summaryPoints = article.summaryPoints || [article.descriptionKo || article.description || '요약 정보가 없습니다.'];
+            
+            const summaryHtml = summaryPoints.map(point => 
+                `<div class="summary-point">${point}</div>`
             ).join('');
             document.getElementById('summary-content').innerHTML = summaryHtml;
 
-            // Render translation/content
-            const translationContent = article.content || article.descriptionKo || 
-                                     article.description || "번역된 내용이 없습니다.";
-            document.getElementById('translation-text').textContent = translationContent;
+            // 번역 내용
+            const translationContent = article.descriptionKo || article.description || article.title || '번역된 내용이 없습니다.';
+            document.getElementById('translation-content').innerHTML = translationContent;
 
-            // Set source links
-            window.article = article; // 디버깅용 전역 변수
-            const sourceUrl = article.link || article.url || "#";
-            console.log('Setting sourceUrl:', sourceUrl);
-            console.log('article.link:', article.link);
-            console.log('article.url:', article.url);
-            
-            document.getElementById('link-summary').href = sourceUrl;
-            document.getElementById('link-translation').href = sourceUrl;
-            
-            console.log('Final href:', document.getElementById('link-summary').href);
-            
-            // Disable link if no URL
-            if (sourceUrl === "#") {
-                document.getElementById('link-summary').style.display = 'none';
-                document.getElementById('link-translation').style.display = 'none';
+            // 원문 링크
+            if (article.link) {
+                document.getElementById('original-link').href = article.link;
             }
+
+            // 페이지 제목 설정
+            document.title = `${title} - EmarkNews`;
+
+            // 내용 표시
+            document.getElementById('article-content').style.display = 'block';
+            document.getElementById('article-actions').style.display = 'flex';
+            
+            console.log('Article rendered successfully');
         }
+
+        // 오류 표시
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('article-header').innerHTML = '';
+        }
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, starting article load...');
+            loadArticle();
+        });
     </script>
 </body>
 </html>
+

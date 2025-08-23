@@ -135,26 +135,46 @@ app.get('/health', (req, res) => {
 
 // New NewsService API Routes (빠른 로딩)
 app.get('/api/:section/fast', async (req, res) => {
+  // 30초 타임아웃 설정
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(408).json({
+        success: false,
+        error: 'Request timeout',
+        message: 'API response took too long'
+      });
+    }
+  }, 30000);
+
   try {
     const { section } = req.params;
     const validSections = ['world', 'kr', 'korea', 'japan', 'buzz', 'tech', 'business'];
     
     if (!validSections.includes(section)) {
+      clearTimeout(timeout);
       return res.status(400).json({
         success: false,
         error: `Invalid section. Must be one of: ${validSections.join(', ')}`
       });
     }
 
-    const result = await newsService.getSectionFull(section);
-    res.json(result);
+    const result = await newsService.getSectionFast(section);
+    clearTimeout(timeout);
+    
+    if (!res.headersSent) {
+      res.json(result);
+    }
   } catch (error) {
+    clearTimeout(timeout);
     logger.error(`API Error - /api/${req.params.section}/fast:`, error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch news',
-      message: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch news',
+        message: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
   }
 });
 

@@ -397,7 +397,7 @@
             constructor() {
                 // [수정 1] 백엔드 API 서버의 전체 주소를 여기에 입력합니다.
                 // 상대경로로 교체 (권장) - CSP/CORS/도메인 분기 모두 해소
-                this.API_BASE_URL = ''; // 동일 오리진
+                this.API_BASE_URL = 'https://emarknews-v2-production.up.railway.app'; // Railway 서버
 
                 this.currentSection = 'world';
                 this.articles = [];
@@ -437,11 +437,19 @@
             async loadNews(section) {
                 this.showLoading();
                 
-                // [수정 2] 기존 API 엔드포인트를 사용합니다.
-                const url = `${this.API_BASE_URL}/api/${section}`;
+                // [수정] fast 엔드포인트를 사용하여 빠른 응답 보장
+                const url = `${this.API_BASE_URL}/api/${section}/fast`;
 
                 try {
-                    const response = await fetch(url);
+                    // 캐시 무효화를 위한 타임스탬프 추가
+                    const cacheBuster = `?t=${Date.now()}`;
+                    const response = await fetch(url + cacheBuster, {
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
+                    });
                     
                     if (!response.ok) {
                         throw new Error(`서버 응답 오류: ${response.status}`);
@@ -527,7 +535,7 @@
                         <div class="news-content-wrapper">
                             <div class="news-header">
                                 <div class="news-source-time">
-                                    <span class="news-source">${this.escapeHtml(article.source || 'Unknown')}</span>
+                                    <span class="news-source">${this.escapeHtml(this.truncateSource(article.source || 'Unknown'))}</span>
                                     <span>·</span>
                                     <span class="time-ago">${timeAgo}</span>
                                 </div>
@@ -573,6 +581,33 @@
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
+            }
+
+            truncateSource(source) {
+                if (typeof source !== 'string') return '';
+                
+                // 바이트 길이 계산 (한글 3바이트, 영문 1바이트)
+                let byteLength = 0;
+                let truncateIndex = 0;
+                
+                for (let i = 0; i < source.length; i++) {
+                    const char = source.charAt(i);
+                    // 한글, 중문, 일문 등은 3바이트, 영문/숫자/기호는 1바이트
+                    const charByteLength = /[\u3131-\u314e\u314f-\u3163\uac00-\ud7a3\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]/.test(char) ? 3 : 1;
+                    
+                    if (byteLength + charByteLength > 20) { // 20바이트 제한
+                        break;
+                    }
+                    
+                    byteLength += charByteLength;
+                    truncateIndex = i + 1;
+                }
+                
+                if (truncateIndex < source.length) {
+                    return source.substring(0, truncateIndex) + '...';
+                }
+                
+                return source;
             }
 
             addDetailButtonListeners() {

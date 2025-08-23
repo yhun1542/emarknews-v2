@@ -36,8 +36,8 @@ const minutesSince = (iso) => { const t = new Date(iso).getTime(); if (!t) retur
 const FAST = {
   PHASE1_MS: Number(process.env.FAST_PHASE1_DEADLINE_MS || 600),
   PHASE2_MS: Number(process.env.FAST_PHASE2_DEADLINE_MS || 1500),
-  FIRST_BATCH: Number(process.env.FAST_FIRST_BATCH_SIZE || 24),
-  FULL_MAX: Number(process.env.FAST_FULL_MAX || 100),
+  FIRST_BATCH: Number(process.env.FAST_FIRST_BATCH_SIZE || 20), // 40 → 20으로 줄여서 빠른 AI 처리
+  FULL_MAX: Number(process.env.FAST_FULL_MAX || 150),
   TTL_FAST: Number(process.env.FAST_REDIS_TTL_SEC || 60),
   TTL_FULL: Number(process.env.FULL_REDIS_TTL_SEC || 600),
 };
@@ -110,8 +110,29 @@ const RSS_FEEDS = {
     { url: 'https://feeds.bbci.co.uk/news/rss.xml', name: 'BBC News' }
   ],
   kr: [
+    // 종합일간지
+    { url: 'http://www.chosun.com/site/data/rss/rss.xml', name: '조선일보' },
     { url: 'https://rss.joins.com/joins_news_list.xml', name: '중앙일보' },
-    { url: 'https://rss.hankyung.com/feed/economy.xml', name: '한국경제' }
+    { url: 'http://rss.donga.com/total.xml', name: '동아일보' },
+    { url: 'http://www.hani.co.kr/rss/', name: '한겨레' },
+    { url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml', name: '경향신문' },
+    { url: 'http://rss.kmib.co.kr/data/kmibRssAll.xml', name: '국민일보' },
+    
+    // 경제지
+    { url: 'https://www.mk.co.kr/rss/30000001/', name: '매일경제' },
+    { url: 'https://www.hankyung.com/feed/all-news', name: '한국경제' },
+    { url: 'http://rss.sedaily.com/sedaily_recent.xml', name: '서울경제' },
+    
+    // 방송사
+    { url: 'http://world.kbs.co.kr/rss/rss_news.htm?lang=k', name: 'KBS' },
+    { url: 'http://www.mbc.co.kr/rss/news/', name: 'MBC' },
+    { url: 'http://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01', name: 'SBS' },
+    { url: 'http://www.ytn.co.kr/rss/news.xml', name: 'YTN' },
+    
+    // 인터넷 언론
+    { url: 'http://rss.ohmynews.com/rss/ohmynews.xml', name: '오마이뉴스' },
+    { url: 'http://www.pressian.com/rss/news.xml', name: '프레시안' },
+    { url: 'http://www.mediatoday.co.kr/rss/allArticle.xml', name: '미디어오늘' }
   ],
   japan: [
     { url: 'https://www3.nhk.or.jp/rss/news/cat0.xml', name: 'NHK News' },
@@ -121,7 +142,63 @@ const RSS_FEEDS = {
     { url: 'https://news.livedoor.com/topics/rss/top.xml', name: 'Livedoor News' }
   ]
 };
-const SOURCE_WEIGHTS = { /* ... 기존 내용과 동일 ... */ };
+const SOURCE_WEIGHTS = {
+  // 최고 신뢰도 소스 (5.0)
+  'reuters.com': 5.0,
+  'bbc.com': 5.0,
+  'bbc.co.uk': 5.0,
+  'ap.org': 5.0,
+  'apnews.com': 5.0,
+  
+  // 높은 신뢰도 소스 (4.0-4.5)
+  'cnn.com': 4.5,
+  'edition.cnn.com': 4.5,
+  'dw.com': 4.0,
+  'bloomberg.com': 4.5,
+  'wsj.com': 4.5,
+  'ft.com': 4.5,
+  
+  // 일반 신뢰도 소스 (3.0-3.5)
+  'techcrunch.com': 3.5,
+  'venturebeat.com': 3.0,
+  'politico.com': 3.5,
+  'theguardian.com': 4.0,
+  'washingtonpost.com': 4.0,
+  'nytimes.com': 4.5,
+  
+  // 한국 소스 (4.0-5.0)
+  'joins.com': 4.5,
+  'hankyung.com': 4.0,
+  'yonhapnews.co.kr': 5.0,
+  'chosun.com': 4.0,
+  'donga.com': 4.0,
+  'hani.co.kr': 4.5,
+  'khan.co.kr': 4.0,
+  'kmib.co.kr': 4.0,
+  'mk.co.kr': 4.0,
+  'sedaily.com': 3.5,
+  'kbs.co.kr': 4.5,
+  'mbc.co.kr': 4.5,
+  'sbs.co.kr': 4.5,
+  'ytn.co.kr': 4.0,
+  'ohmynews.com': 3.5,
+  'pressian.com': 3.5,
+  'mediatoday.co.kr': 3.0,
+  
+  // 일본 소스 (4.0-5.0)
+  'nhk.or.jp': 5.0,
+  'asahi.com': 4.5,
+  'mainichi.jp': 4.5,
+  'yomiuri.co.jp': 4.5,
+  'japannews.yomiuri.co.jp': 4.5,
+  'livedoor.com': 3.0,
+  
+  // 기타 소스 (2.0-3.0)
+  'tmz.com': 2.5,
+  'buzzfeed.com': 2.0,
+  'reddit.com': 2.5,
+  'youtube.com': 2.0
+};
 
 // -------------------------------
 // NewsService
@@ -171,14 +248,14 @@ class NewsService {
   async getSectionFull(section='buzz'){ return this._getFull(section); }
   
   // ====== AI 연동 메서드 ======
-  async _enrichArticlesWithAI(articles) {
+  async _enrichArticlesWithAI(articles, section = 'world') {
     if (!this.aiService.client) {
       this.logger.warn('AI Service is not initialized. Skipping enrichment.');
       return articles;
     }
 
     const enrichedArticles = [];
-    const BATCH_SIZE = 5; // 한 번에 5개씩만 처리
+    const BATCH_SIZE = 5; // 배치 크기 증가로 속도 향상
 
     this.logger.info(`[AI] Starting enrichment for ${articles.length} articles in batches of ${BATCH_SIZE}...`);
 
@@ -188,30 +265,236 @@ class NewsService {
       
       const enrichmentPromises = batch.map(async (article) => {
         try {
-          const [summaryResult, translationResult] = await Promise.all([
-            this.aiService.summarize(article.title + '\n' + (article.description || ''), { detailed: true }),
-            this.aiService.translate(article.title, 'ko')
+          // 제목 언어 감지 및 번역 처리
+          let translationPromise;
+          const hasJapanese = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/.test(article.title);
+          const hasKorean = /[\uac00-\ud7af]/.test(article.title);
+          const isEnglish = /^[a-zA-Z0-9\s\-\.,!?:;'"()]+$/.test(article.title);
+          
+          // 섹션별 번역 정책
+          if (section === 'japan' || section === 'kr' || section === 'korea') {
+            // 일본/한국 섹션: 한국어가 아닌 모든 언어를 번역
+            if (!hasKorean) {
+              translationPromise = this.aiService.translate(article.title, 'ko');
+            } else {
+              translationPromise = Promise.resolve({ success: true, data: { translated: article.title } });
+            }
+          } else {
+            // 다른 섹션: 기존 로직 (일본어이거나 한국어가 아닌 경우 번역)
+            if (hasJapanese || (!hasKorean && article.title)) {
+              translationPromise = this.aiService.translate(article.title, 'ko');
+            } else {
+              translationPromise = Promise.resolve({ success: true, data: { translated: article.title } });
+            }
+          }
+          
+          const [translationResult, summaryResult] = await Promise.all([
+            translationPromise,
+            this.aiService.summarize(article.description || article.title, { detailed: false, maxPoints: 3 })
           ]);
           
+          // 제목 번역 처리
+          const titleKo = (translationResult.success && translationResult.data.translated) 
+            ? translationResult.data.translated 
+            : article.title;
+
+          // 기본 요약 처리 (메인페이지용)
           let summaryPoints = [];
           if (summaryResult.success && summaryResult.data.summary) {
-              summaryPoints = summaryResult.data.summary.split('\n').map(line => line.replace(/^[•\-*]\s*/, '').trim()).filter(point => point);
+            const summary = summaryResult.data.summary;
+            if (typeof summary === 'string') {
+              summaryPoints = summary
+                .split('\n')
+                .map(line => line.replace(/^[•\-*\d\.\)]\s*/, '').trim())
+                .filter(point => point && point.length > 5)
+                .slice(0, 3); // 메인페이지용 3개 포인트
+            } else if (Array.isArray(summary)) {
+              summaryPoints = summary.filter(point => point && point.length > 5).slice(0, 3);
+            }
+          }
+          
+          // 기본 요약이 없으면 description 사용
+          if (summaryPoints.length === 0) {
+            summaryPoints = article.description 
+              ? [article.description]
+              : [article.title];
           }
 
-          const titleKo = (translationResult.success && translationResult.data.translated) ? translationResult.data.translated : article.title;
+          // 메인페이지용 기본 번역된 기사 반환
+          return {
+            ...article,
+            titleKo,
+            summaryPoints,
+            descriptionKo: article.description || '', // 일단 원문 그대로
+            tags: article.tags || []
+          };
+        } catch (error) {
+          this.logger.error(`[AI] Error enriching article ${article.id}:`, error.stack);
+          return {
+            ...article,
+            titleKo: article.title,
+            summaryPoints: [article.description || article.title],
+            descriptionKo: article.description || '',
+            tags: []
+          };
+        }
+      });
 
-          return { ...article, summaryPoints: summaryPoints.length > 0 ? summaryPoints : [article.description], titleKo };
+      const settledBatch = await Promise.all(enrichmentPromises);
+      enrichedArticles.push(...settledBatch);
+      
+      // 배치 간 대기 시간 더 단축
+      if (i + BATCH_SIZE < articles.length) {
+        await new Promise(resolve => setTimeout(resolve, 200)); // 0.5초 → 0.2초로 단축
+      }
+    }
+    
+    this.logger.info(`[AI] Basic enrichment completed for all ${enrichedArticles.length} articles.`);
+    
+    // 상세 처리는 백그라운드에서 비동기로 진행
+    this.processDetailedEnrichment(enrichedArticles).catch(error => {
+      this.logger.error('[AI] Background detailed enrichment failed:', error);
+    });
+    
+    return enrichedArticles;
+  }
+
+  // 상세 AI 처리를 백그라운드에서 진행
+  async processDetailedEnrichment(articles) {
+    this.logger.info(`[AI] Starting detailed background enrichment for ${articles.length} articles...`);
+    
+    for (const article of articles) {
+      try {
+        const fullText = `${article.title}\n\n${article.description || ''}`.trim();
+        
+        // 상세 요약과 내용 번역을 병렬 처리
+        const [summaryResult, contentTransResult] = await Promise.all([
+          this.aiService.summarize(fullText, { detailed: true, maxPoints: 5 }),
+          article.description ? this.aiService.translate(article.description, 'ko') : Promise.resolve({ success: false })
+        ]);
+        
+        // 상세 요약 처리
+        let detailedSummaryPoints = [];
+        if (summaryResult.success && summaryResult.data.summary) {
+          const summary = summaryResult.data.summary;
+          if (typeof summary === 'string') {
+            detailedSummaryPoints = summary
+              .split('\n')
+              .map(line => line.replace(/^[•\-*\d\.\)]\s*/, '').trim())
+              .filter(point => point && point.length > 10)
+              .slice(0, 5);
+          } else if (Array.isArray(summary)) {
+            detailedSummaryPoints = summary.filter(point => point && point.length > 10).slice(0, 5);
+          }
+        }
+
+        // 내용 번역 처리
+        const descriptionKo = (contentTransResult.success && contentTransResult.data.translated)
+          ? contentTransResult.data.translated
+          : article.description || '';
+
+        // 상세 처리 완료된 기사 정보 업데이트 (캐시에 반영)
+        if (detailedSummaryPoints.length > 0) {
+          article.summaryPoints = detailedSummaryPoints;
+        }
+        if (descriptionKo) {
+          article.descriptionKo = descriptionKo;
+        }
+        
+        this.logger.info(`[AI] Detailed enrichment completed for article: ${article.id}`);
+        
+        // 각 기사 처리 후 짧은 대기
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        this.logger.error(`[AI] Error in detailed enrichment for article ${article.id}:`, error);
+      }
+    }
+    
+    this.logger.info(`[AI] All detailed background enrichment completed.`);
+  }
+
+  async _enrichArticlesWithAI_OLD(articles) {
+    if (!articles || articles.length === 0) {
+      this.logger.warn('[AI] No articles to enrich');
+      return articles;
+    }
+
+    const enrichedArticles = [];
+    const BATCH_SIZE = 5; // 배치 크기 증가로 속도 향상
+
+    this.logger.info(`[AI] Starting enrichment for ${articles.length} articles in batches of ${BATCH_SIZE}...`);
+
+    for (let i = 0; i < articles.length; i += BATCH_SIZE) {
+      const batch = articles.slice(i, i + BATCH_SIZE);
+      this.logger.info(`[AI] Processing batch ${i / BATCH_SIZE + 1}...`);
+      
+      const enrichmentPromises = batch.map(async (article) => {
+        try {
+          // 더 상세한 텍스트로 요약 요청
+          const fullText = `${article.title}\n\n${article.description || ''}`.trim();
+          
+          // 병렬 처리로 속도 향상
+          const [summaryResult, translationResult, contentTransResult] = await Promise.all([
+            this.aiService.summarize(fullText, { detailed: true, maxPoints: 5 }),
+            this.aiService.translate(article.title, 'ko'),
+            article.description ? this.aiService.translate(article.description, 'ko') : Promise.resolve({ success: false })
+          ]);
+          
+          // 요약 처리 개선
+          let summaryPoints = [];
+          if (summaryResult.success && summaryResult.data.summary) {
+            const summary = summaryResult.data.summary;
+            if (typeof summary === 'string') {
+              summaryPoints = summary
+                .split('\n')
+                .map(line => line.replace(/^[•\-*\d\.\)]\s*/, '').trim())
+                .filter(point => point && point.length > 10)
+                .slice(0, 5); // 최대 5개 포인트
+            } else if (Array.isArray(summary)) {
+              summaryPoints = summary.filter(point => point && point.length > 10).slice(0, 5);
+            }
+          }
+
+          // 번역 처리 개선
+          const titleKo = (translationResult.success && translationResult.data.translated) 
+            ? translationResult.data.translated 
+            : article.title;
+
+          const descriptionKo = (contentTransResult.success && contentTransResult.data.translated)
+            ? contentTransResult.data.translated
+            : article.description;
+
+          const enrichedArticle = { 
+            ...article, 
+            titleKo,
+            descriptionKo,
+            summaryPoints: summaryPoints.length > 0 ? summaryPoints : [descriptionKo || article.description || article.title]
+          };
+
+          this.logger.info(`[AI] Enriched article: ${article.id} - Title: ${titleKo}, Summary points: ${summaryPoints.length}`);
+          return enrichedArticle;
         } catch (error) {
           this.logger.warn(`AI enrichment failed for article ${article.id}:`, error.message);
-          return article; 
+          return { 
+            ...article, 
+            titleKo: article.title,
+            descriptionKo: article.description,
+            summaryPoints: [article.description || article.title]
+          }; 
         }
       });
       
       const settledBatch = await Promise.all(enrichmentPromises);
       enrichedArticles.push(...settledBatch);
+      
+      // 배치 간 대기 시간 단축으로 속도 향상
+      if (i + BATCH_SIZE < articles.length) {
+        await new Promise(resolve => setTimeout(resolve, 500)); // 1초 → 0.5초로 단축
+      }
     }
     
-    this.logger.info(`[AI] Enrichment completed for all articles.`);
+    this.logger.info(`[AI] Enrichment completed for all ${enrichedArticles.length} articles.`);
     return enrichedArticles;
   }
 
@@ -284,6 +567,36 @@ class NewsService {
       else { memoryCache.set(key, initial); setTimeout(() => memoryCache.delete(key), FAST.TTL_FAST * 1000); }
     } catch (e) { this.logger.warn('Cache save failed:', e.message); }
 
+    // Phase1 데이터로 즉시 AI 처리 시작
+    this.logger.info(`[${section}] Starting immediate AI processing with ${ranked.length} articles from Phase1`);
+    this._enrichArticlesWithAI(ranked, section).then(enriched => {
+      const aiProcessed = this.rankAndSort(section, enriched).slice(0,FAST.FIRST_BATCH);
+      const aiPayload = { success: true, data: aiProcessed, section, total:aiProcessed.length, partial:false, timestamp:new Date().toISOString() };
+      
+      this.logger.info(`[${section}] AI processing completed. Saving to cache key: ${key}`);
+      this.logger.info(`[${section}] AI payload sample: ${JSON.stringify({
+        total: aiPayload.total,
+        firstTitle: aiPayload.data[0]?.title,
+        firstTitleKo: aiPayload.data[0]?.titleKo,
+        translated: aiPayload.data[0]?.titleKo !== aiPayload.data[0]?.title
+      })}`);
+      
+      if (redis) { 
+        redis.set(key, JSON.stringify(aiPayload), 'EX', FAST.TTL_FAST).then(() => {
+          this.logger.info(`[${section}] AI data successfully saved to Redis cache key: ${key}`);
+        }).catch(e => {
+          this.logger.error(`[${section}] AI cache save failed:`, e.message);
+        }); 
+      } else { 
+        memoryCache.set(key, aiPayload); 
+        setTimeout(() => memoryCache.delete(key), FAST.TTL_FAST * 1000); 
+        this.logger.info(`[${section}] AI data successfully saved to memory cache key: ${key}`);
+      }
+      this.logger.info(`[${section}] Phase1 AI enrichment completed: ${aiProcessed.length} articles processed`);
+    }).catch(e => {
+      this.logger.error(`[${section}] Phase1 AI enrichment failed:`, e.message, e.stack);
+    });
+
     (async()=>{
       try {
         const yt = YT_REGIONS[section] || [];
@@ -303,17 +616,46 @@ class NewsService {
           }
         }
         
+        this.logger.info(`[${section}] Starting Phase2 with ${phase2.length} additional sources`);
         const settledPromises2 = await Promise.allSettled(phase2);
         const extra = settledPromises2.filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
+        this.logger.info(`[${section}] Phase2 collected ${extra.length} additional articles`);
+        
         const merged = deduplicate(filterRecent([...ranked,...extra],336));
+        this.logger.info(`[${section}] Phase2 merged total: ${merged.length} articles`);
         
-        const enriched = await this._enrichArticlesWithAI(merged);
-        const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
-        const payload = { success: true, data: full, section, total:full.length, partial:false, timestamp:new Date().toISOString() };
+        // Phase2 완료 후 전체 데이터로 AI 처리
+        if (merged.length > ranked.length) {
+          this.logger.info(`[${section}] Starting Phase2 AI processing with ${merged.length} total articles`);
+          this._enrichArticlesWithAI(merged, section).then(enriched => {
+            const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
+            const payload = { success: true, data: full, section, total:full.length, partial:false, timestamp:new Date().toISOString() };
+            
+            if (redis) { 
+              redis.set(key, JSON.stringify(payload), 'EX', FAST.TTL_FULL).catch(e => 
+                this.logger.warn('Phase2 cache save failed:', e.message)
+              ); 
+            } else { 
+              memoryCache.set(key, payload); 
+              setTimeout(() => memoryCache.delete(key), FAST.TTL_FULL * 1000); 
+            }
+            this.logger.info(`[${section}] Phase2 AI enrichment completed: ${full.length} articles processed`);
+          }).catch(e => {
+            this.logger.error(`[${section}] Phase2 AI enrichment failed:`, e.message, e.stack);
+            // AI 실패 시에도 기본 데이터는 캐시
+            const basicPayload = { success: true, data: merged.slice(0,FAST.FULL_MAX), section, total:merged.length, partial:false, timestamp:new Date().toISOString() };
+            if (redis) { 
+              redis.set(key, JSON.stringify(basicPayload), 'EX', FAST.TTL_FULL).catch(() => {}); 
+            } else { 
+              memoryCache.set(key, basicPayload); 
+              setTimeout(() => memoryCache.delete(key), FAST.TTL_FULL * 1000); 
+            }
+          });
+        } else {
+          this.logger.info(`[${section}] Phase2 added no new articles, skipping additional AI processing`);
+        }
         
-        if (redis) { await redis.set(key, JSON.stringify(payload), 'EX', FAST.TTL_FULL); }
-        else { memoryCache.set(key, payload); setTimeout(() => memoryCache.delete(key), FAST.TTL_FULL * 1000); }
-      } catch (e) { this.logger.warn('Phase2 with AI failed:', e.message); }
+      } catch (e) { this.logger.warn('Phase2 failed:', e.message); }
     })();
 
     return initial;
@@ -337,7 +679,7 @@ class NewsService {
     const raw = settled.filter(s=>s.status==='fulfilled').flatMap(s=>s.value||[]);
     const uniqueRaw = deduplicate(filterRecent(raw, 336));
     
-    const enriched = await this._enrichArticlesWithAI(uniqueRaw);
+    const enriched = await this._enrichArticlesWithAI(uniqueRaw, section);
     const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
     const payload = { success: true, data: full, section, total:full.length, partial:false, timestamp:new Date().toISOString() };
     
@@ -546,12 +888,12 @@ class NewsService {
           url: it.link || '',
           source: feed.title || domainFromUrl(url),
           lang: 'en',
-          publishedAt: it.pubDate || it.isoDate || new Date().toISOString(),
+          publishedAt: this.validateAndParseDate(it.pubDate || it.isoDate),
           reactions: 0,
           followers: 0,
           domain: domainFromUrl(it.link || ''),
           _srcType: 'rss'
-        })),
+        })).filter(item => item.publishedAt !== null), // 유효한 날짜만 필터링
         etag: response.headers.etag,
         lastModified: response.headers['last-modified'],
         lastFetch: Date.now()
@@ -658,6 +1000,40 @@ class NewsService {
         _srcType: 'naver'
       }));
   }
+
+  validateAndParseDate(dateString) {
+    if (!dateString) return null; // 날짜가 없으면 null 반환
+    
+    try {
+      const parsedDate = new Date(dateString);
+      
+      // 유효하지 않은 날짜 체크
+      if (isNaN(parsedDate.getTime())) {
+        return null;
+      }
+      
+      // 너무 오래된 기사 필터링 (30일 이상)
+      const now = new Date();
+      const daysDiff = (now - parsedDate) / (1000 * 60 * 60 * 24);
+      
+      if (daysDiff > 30) {
+        this.logger.warn(`Old article filtered: ${daysDiff.toFixed(1)} days old`);
+        return null;
+      }
+      
+      // 미래 날짜 체크 (1시간 이상 미래)
+      if (parsedDate > new Date(Date.now() + 60 * 60 * 1000)) {
+        this.logger.warn(`Future article filtered: ${parsedDate.toISOString()}`);
+        return null;
+      }
+      
+      return parsedDate.toISOString();
+    } catch (error) {
+      this.logger.warn(`Invalid date format: ${dateString}`);
+      return null;
+    }
+  }
+
   stripHtml(text) { if (!text) return ''; return text.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim(); }
 
   normalizeItem(raw){
@@ -750,19 +1126,27 @@ class NewsService {
     for (const key of keysToTry) {
       let cachedData = null;
       try {
-        if (this.cache.redis) {
-          cachedData = await this.cache.redis.get(key);
+        if (redis) {
+          cachedData = await redis.get(key);
         } else {
-          cachedData = this.cache.memory.get(key);
+          cachedData = memoryCache.get(key);
         }
 
         if (cachedData) {
-          const parsedList = JSON.parse(cachedData);
-          const article = parsedList.data.find(item => item.id === articleId);
+          let parsedList;
+          if (typeof cachedData === 'string') {
+            parsedList = JSON.parse(cachedData);
+          } else {
+            parsedList = cachedData;
+          }
+          
+          if (parsedList && parsedList.data && Array.isArray(parsedList.data)) {
+            const article = parsedList.data.find(item => item.id === articleId);
 
-          if (article) {
-            this.logger.info(`[Detail] Found article in cache key: ${key}`);
-            return { success: true, data: article };
+            if (article) {
+              this.logger.info(`[Detail] Found article in cache key: ${key}`);
+              return { success: true, data: article };
+            }
           }
         }
       } catch (e) {
