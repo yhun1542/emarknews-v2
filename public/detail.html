@@ -35,7 +35,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
@@ -50,7 +50,7 @@
 
         .top-nav {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             margin-bottom: 24px;
         }
@@ -101,6 +101,12 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex: 1;
+        }
+
+        .meta-right {
+            display: flex;
+            align-items: center;
         }
 
         .source {
@@ -218,6 +224,33 @@
             margin: 20px 0;
         }
 
+        .bottom-nav {
+            display: flex;
+            justify-content: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .bottom-back-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
+        }
+
+        .bottom-back-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 12px;
@@ -244,12 +277,15 @@
         <div class="header">
             <div class="top-nav">
                 <a href="/" class="logo">EmarkNews.com</a>
-                <button class="back-button" onclick="goBack()">← 뒤로가기</button>
             </div>
             
             <div id="article-content">
                 <div class="loading">기사를 불러오는 중입니다...</div>
             </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <button class="bottom-back-button" onclick="goBack()">← 뒤로가기</button>
         </div>
     </div>
 
@@ -340,7 +376,9 @@
                             <span class="source">${article.source || '출처 없음'}</span>
                             <span class="publish-time">${formatDateTime(article.publishedAt)}</span>
                         </div>
-                        <div class="rating">⭐${article.rating || '0.0'}</div>
+                        <div class="meta-right">
+                            <div class="rating">⭐${article.rating || '0.0'}</div>
+                        </div>
                     </div>
                     
                     ${imageHtml}
