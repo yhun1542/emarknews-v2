@@ -110,29 +110,18 @@ const RSS_FEEDS = {
     { url: 'https://feeds.bbci.co.uk/news/rss.xml', name: 'BBC News' }
   ],
   kr: [
-    // 종합일간지
-    { url: 'http://www.chosun.com/site/data/rss/rss.xml', name: '조선일보' },
-    { url: 'https://rss.joins.com/joins_news_list.xml', name: '중앙일보' },
-    { url: 'http://rss.donga.com/total.xml', name: '동아일보' },
-    { url: 'http://www.hani.co.kr/rss/', name: '한겨레' },
-    { url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml', name: '경향신문' },
-    { url: 'http://rss.kmib.co.kr/data/kmibRssAll.xml', name: '국민일보' },
+    // 연합뉴스 (최고 신뢰도)
+    { url: 'https://www.yna.co.kr/rss/news.xml', name: '연합뉴스' },
     
-    // 경제지
+    // 종합일간지 (HTTPS 우선)
+    { url: 'https://rss.joins.com/joins_news_list.xml', name: '중앙일보' },
+    
+    // 경제지 (안정적인 HTTPS)
     { url: 'https://www.mk.co.kr/rss/30000001/', name: '매일경제' },
     { url: 'https://www.hankyung.com/feed/all-news', name: '한국경제' },
-    { url: 'http://rss.sedaily.com/sedaily_recent.xml', name: '서울경제' },
     
-    // 방송사
-    { url: 'http://world.kbs.co.kr/rss/rss_news.htm?lang=k', name: 'KBS' },
-    { url: 'http://www.mbc.co.kr/rss/news/', name: 'MBC' },
-    { url: 'http://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01', name: 'SBS' },
-    { url: 'http://www.ytn.co.kr/rss/news.xml', name: 'YTN' },
-    
-    // 인터넷 언론
-    { url: 'http://rss.ohmynews.com/rss/ohmynews.xml', name: '오마이뉴스' },
-    { url: 'http://www.pressian.com/rss/news.xml', name: '프레시안' },
-    { url: 'http://www.mediatoday.co.kr/rss/allArticle.xml', name: '미디어오늘' }
+    // 방송사 (테스트 후 추가)
+    { url: 'https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01', name: 'SBS' }
   ],
   japan: [
     { url: 'https://www3.nhk.or.jp/rss/news/cat0.xml', name: 'NHK News' },
@@ -181,9 +170,6 @@ const SOURCE_WEIGHTS = {
   'mbc.co.kr': 4.5,
   'sbs.co.kr': 4.5,
   'ytn.co.kr': 4.0,
-  'ohmynews.com': 3.5,
-  'pressian.com': 3.5,
-  'mediatoday.co.kr': 3.0,
   
   // 일본 소스 (4.0-5.0)
   'nhk.or.jp': 5.0,
