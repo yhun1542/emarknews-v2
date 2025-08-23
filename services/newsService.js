@@ -118,7 +118,6 @@ const RSS_FEEDS = {
     
     // 경제지 (안정적인 HTTPS)
     { url: 'https://www.mk.co.kr/rss/30000001/', name: '매일경제' },
-    { url: 'https://www.hankyung.com/feed/all-news', name: '한국경제' },
     
     // 방송사 (테스트 후 추가)
     { url: 'https://news.sbs.co.kr/news/SectionRssFeed.do?sectionId=01', name: 'SBS' }
