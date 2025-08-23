@@ -243,8 +243,9 @@
 
         .summary-point {
             margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--text-content);
+            font-size: 0.95rem;  /* 0.875rem → 0.95rem으로 증가 */
+            font-weight: 600;    /* 폰트 굵기 추가 */
+            color: #1e293b;      /* 더 진한 색상으로 변경 */
             line-height: 1.6;
             display: flex;
             align-items: flex-start;
@@ -262,11 +263,19 @@
             border-top: 1px solid var(--border-color);
             background: var(--surface-color);
             flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .publish-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .view-details-btn {
-            width: 100%;
-            padding: 0.7rem;
+            padding: 0.7rem 1.5rem;
             border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 700;
@@ -515,15 +524,21 @@
                 const maxPoints = this.isMobileView ? 15 : 3;
                 const summaryHtml = summaryPoints
                     .slice(0, maxPoints)
-                    .map(point => `
-                        <div class="summary-point">
-                            <span class="summary-bullet">•</span>
-                            <span class="summary-text">${this.escapeHtml(point)}</span>
-                        </div>
-                    `).join('');
+                    .map(point => {
+                        // 맨 앞의 점(.) 제거
+                        const cleanPoint = point.replace(/^\.\s*/, '');
+                        return `
+                            <div class="summary-point">
+                                <span class="summary-bullet">•</span>
+                                <span class="summary-text">${this.escapeHtml(cleanPoint)}</span>
+                            </div>
+                        `;
+                    }).join('');
                 
+                const publishDate = this.formatPublishDate(article.publishedAt);
                 const actionsHtml = `
                     <div class="news-actions-wrapper">
+                        <div class="publish-date">${publishDate}</div>
                         <button class="view-details-btn" data-article-id="${article.id}">
                             ✨ 상세보기
                         </button>
@@ -560,6 +575,20 @@
             getTagClass(tag) {
                 const tagMap = { '긴급': 'urgent', '중요': 'important', 'Hot': 'hot', 'Buzz': 'buzz' };
                 return tagMap[tag] || 'default';
+            }
+
+            formatPublishDate(publishedAt) {
+                if (!publishedAt) return '';
+                const date = new Date(publishedAt);
+                if (isNaN(date.getTime())) return '';
+                
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}.${month}.${day} ${hours}:${minutes}`;
             }
 
             getTimeAgo(publishedAt) {
