@@ -1,5 +1,7 @@
 // server.js - EmarkNews Main Server
+// EmarkNews v2 Server - Force Redeploy 2025-08-22 23:20
 require('dotenv').config();
+// Force deploy trigger - Cache cleared and ready for deployment
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -43,26 +45,50 @@ const limiter = rateLimit({
   // validate 옵션 제거 - trust proxy true로 설정했으므로 기본 동작 사용
 });
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https:"],
-      imgSrc: ["'self'", "data:", "https:"],
-      fontSrc: ["'self'", "https:", "data:"],
-      connectSrc: ["'self'"]
-    }
-  }
+// Security middleware - [최종 CSP 설정]
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        // helmet의 기본 보안 설정을 대부분 유지합니다.
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        
+        // [수정] API 연결 허용 목록
+        "connect-src": [
+            "'self'", 
+            "https://emarknews.com", 
+            "https://emarknews-v2-production.up.railway.app"
+        ],
+        
+        // [수정] 인라인 스크립트 허용
+        "script-src": ["'self'", "'unsafe-inline'"],
+        
+        // [수정] 외부 폰트 및 스타일시트 허용 (기존 프론트엔드 코드에 필요)
+        "font-src": ["'self'", "https:", "data:"],
+        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+      },
+    },
+  })
+);
+
+// CORS 설정 강화
+app.use(cors({
+  origin: [
+    'https://emarknews.com',
+    'https://www.emarknews.com',
+    'https://emarknews-v2-production.up.railway.app',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
 
 // Performance middleware
 app.use(compression());
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) }}));
-
 // Basic middleware
-app.use(cors());
 app.use(express.json());
 
 // (2) /api 에서는 304가 나오지 않도록 강제 no-store + 변동 ETag
@@ -120,7 +146,7 @@ app.get('/api/:section/fast', async (req, res) => {
       });
     }
 
-    const result = await newsService.getSectionFast(section);
+    const result = await newsService.getSectionFull(section);
     res.json(result);
   } catch (error) {
     logger.error(`API Error - /api/${req.params.section}/fast:`, error);
@@ -128,6 +154,86 @@ app.get('/api/:section/fast', async (req, res) => {
       success: false,
       error: 'Failed to fetch news',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// AI API Test endpoints (GET for testing)
+app.get('/api/translate', (req, res) => {
+  res.json({
+    success: true,
+    message: 'AI Translation API is working. Use POST method with {"text": "your text", "targetLang": "ko"}'
+  });
+});
+
+app.get('/api/summarize', (req, res) => {
+  res.json({
+    success: true,
+    message: 'AI Summary API is working. Use POST method with {"text": "your text", "maxPoints": 5}'
+  });
+});
+
+// AI Translation endpoint (moved up to avoid route conflicts)
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, targetLang = 'ko' } = req.body;
+    
+    if (!text || text.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Text is required'
+      });
+    }
+    
+    const result = await aiService.translate(text, targetLang);
+    const translated = result.success ? result.data.translated : 'Translation failed';
+    
+    res.json({
+      success: true,
+      data: {
+        original: text,
+        translated: translated,
+        targetLanguage: targetLang
+      }
+    });
+  } catch (error) {
+    logger.error('API Error - /api/translate:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Translation failed'
+    });
+  }
+});
+
+// AI Summary endpoint (moved up to avoid route conflicts)
+app.post('/api/summarize', async (req, res) => {
+  try {
+    const { text, maxPoints = 5, detailed = false } = req.body;
+    
+    if (!text || text.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Text is required'
+      });
+    }
+    
+    const result = await aiService.summarize(text, { maxPoints, detailed });
+    const summary = result.success ? result.data.summary : 'Summarization failed';
+    
+    res.json({
+      success: true,
+      data: {
+        original: text,
+        summary: summary,
+        points: Array.isArray(summary) ? summary.length : 1,
+        detailed: detailed
+      }
+    });
+  } catch (error) {
+    logger.error('API Error - /api/summarize:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Summarization failed'
     });
   }
 });
@@ -197,9 +303,9 @@ app.get('/api/news/:section', async (req, res) => {
 app.get('/api/article/:section/:id', async (req, res) => {
   try {
     const { section, id } = req.params;
-    const article = await newsService.getArticleById(section, id);
+    const result = await newsService.getArticleById(section, id);
     
-    if (!article) {
+    if (!result || !result.success) {
       return res.status(404).json({
         success: false,
         error: 'Article not found'
@@ -208,7 +314,7 @@ app.get('/api/article/:section/:id', async (req, res) => {
     
     res.json({
       success: true,
-      data: article
+      data: result.data
     });
   } catch (error) {
     logger.error(`API Error - /api/article/${req.params.section}/${req.params.id}:`, error);
@@ -225,7 +331,13 @@ app.get('/api/detail', async (req, res) => {
     const { section, id } = req.query;
     const validSections = ['world', 'kr', 'korea', 'japan', 'buzz', 'tech', 'business'];
     
+    // 디버깅 로그 추가
+    logger.info(`[DEBUG] Detail API called with section: "${section}", id: "${id}"`);
+    logger.info(`[DEBUG] Valid sections: ${validSections.join(', ')}`);
+    logger.info(`[DEBUG] Section type: ${typeof section}, includes check: ${validSections.includes(section)}`);
+    
     if (!validSections.includes(section)) {
+      logger.error(`[DEBUG] Section validation failed for: "${section}"`);
       return res.status(400).json({
         success: false,
         error: `Invalid section. Must be one of: ${validSections.join(', ')}`
@@ -239,9 +351,9 @@ app.get('/api/detail', async (req, res) => {
       });
     }
     
-    const article = await newsService.getArticleById(section, id);
+    const result = await newsService.getArticleById(section, id);
     
-    if (!article) {
+    if (!result || !result.success) {
       return res.status(404).json({
         success: false,
         error: 'Article not found'
@@ -250,7 +362,7 @@ app.get('/api/detail', async (req, res) => {
     
     res.json({
       success: true,
-      data: article
+      data: result.data
     });
   } catch (error) {
     logger.error(`API Error - /api/detail:`, error);
@@ -294,71 +406,7 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
-// AI Translation endpoint
-app.post('/api/translate', async (req, res) => {
-  try {
-    const { text, targetLang = 'ko' } = req.body;
-    
-    if (!text || text.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Text is required'
-      });
-    }
-    
-    const result = await aiService.translate(text, targetLang);
-    const translated = result.success ? result.data.translated : 'Translation failed';
-    
-    res.json({
-      success: true,
-      data: {
-        original: text,
-        translated: translated,
-        targetLanguage: targetLang
-      }
-    });
-  } catch (error) {
-    logger.error('API Error - /api/translate:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Translation failed'
-    });
-  }
-});
-
-// AI Summary endpoint
-app.post('/api/summarize', async (req, res) => {
-  try {
-    const { text, maxPoints = 5, detailed = false } = req.body;
-    
-    if (!text || text.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Text is required'
-      });
-    }
-    
-    const result = await aiService.summarize(text, { detailed });
-    const summary = result.success ? result.data.summary : 'Failed to generate summary';
-    
-    res.json({
-      success: true,
-      data: {
-        summary: summary,
-        points: Array.isArray(summary) ? summary.length : 1,
-        detailed: detailed
-      }
-    });
-  } catch (error) {
-    logger.error('API Error - /api/summarize:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Summarization failed'
-    });
-  }
-});
-
-// Service statistics
+// API Stats endpoint
 app.get('/api/stats', (req, res) => {
   res.json({
     success: true,

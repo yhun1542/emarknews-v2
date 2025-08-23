@@ -115,7 +115,10 @@ const RSS_FEEDS = {
   ],
   japan: [
     { url: 'https://www3.nhk.or.jp/rss/news/cat0.xml', name: 'NHK News' },
-    { url: 'https://feeds.reuters.com/reuters/JPDomesticNews', name: 'Reuters Japan' }
+    { url: 'https://www.asahi.com/rss/asahi/newsheadlines.rdf', name: 'Asahi Shimbun' },
+    { url: 'https://mainichi.jp/rss/etc/english_latest.rss', name: 'Mainichi Shimbun' },
+    { url: 'https://japannews.yomiuri.co.jp/feed', name: 'Japan News' },
+    { url: 'https://news.livedoor.com/topics/rss/top.xml', name: 'Livedoor News' }
   ]
 };
 const SOURCE_WEIGHTS = { /* ... 기존 내용과 동일 ... */ };
@@ -149,7 +152,18 @@ class NewsService {
     this.naverClient = axios.create({ baseURL: 'https://openapi.naver.com/v1/search/', timeout: this.API_TIMEOUT, headers: { 'X-Naver-Client-Id': process.env.NAVER_CLIENT_ID || '', 'X-Naver-Client-Secret': process.env.NAVER_CLIENT_SECRET || '' }});
     this.redditApi = axios.create({ baseURL:'https://oauth.reddit.com', timeout:this.API_TIMEOUT, headers:{ Authorization:`Bearer ${process.env.REDDIT_TOKEN||''}`, 'User-Agent':process.env.REDDIT_USER_AGENT||'emark-buzz/1.0' }});
     this.youtubeApi = axios.create({ baseURL:'https://www.googleapis.com/youtube/v3', timeout:this.API_TIMEOUT });
-    this.rssParser = new Parser({ timeout: 5000, headers: { 'User-Agent': 'EmarkNews/2.0 (News Aggregator)' }});
+    this.rssParser = new Parser({ 
+      timeout: 8000,
+      headers: { 
+        'User-Agent': 'EmarkNews/2.1 (+https://emarknews.com/crawler-info)',
+        'Accept': 'application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5',
+        'Accept-Language': 'ja,en;q=0.9',
+        'Connection': 'keep-alive'
+      }
+    });
+    
+    // RSS 피드별 ETag/Last-Modified 캐시
+    this.rssFeedCache = new Map();
   }
 
   // ====== 공개 API ======
@@ -163,28 +177,42 @@ class NewsService {
       return articles;
     }
 
-    const enrichmentPromises = articles.map(async (article) => {
-      try {
-        const [summaryResult, translationResult] = await Promise.all([
-          this.aiService.summarize(article.title + '\n' + (article.description || ''), { detailed: true }),
-          this.aiService.translate(article.title, 'ko')
-        ]);
-        
-        let summaryPoints = [];
-        if (summaryResult.success && summaryResult.data.summary) {
-            summaryPoints = summaryResult.data.summary.split('\n').map(line => line.replace(/^[•\-*]\s*/, '').trim()).filter(point => point);
+    const enrichedArticles = [];
+    const BATCH_SIZE = 5; // 한 번에 5개씩만 처리
+
+    this.logger.info(`[AI] Starting enrichment for ${articles.length} articles in batches of ${BATCH_SIZE}...`);
+
+    for (let i = 0; i < articles.length; i += BATCH_SIZE) {
+      const batch = articles.slice(i, i + BATCH_SIZE);
+      this.logger.info(`[AI] Processing batch ${i / BATCH_SIZE + 1}...`);
+      
+      const enrichmentPromises = batch.map(async (article) => {
+        try {
+          const [summaryResult, translationResult] = await Promise.all([
+            this.aiService.summarize(article.title + '\n' + (article.description || ''), { detailed: true }),
+            this.aiService.translate(article.title, 'ko')
+          ]);
+          
+          let summaryPoints = [];
+          if (summaryResult.success && summaryResult.data.summary) {
+              summaryPoints = summaryResult.data.summary.split('\n').map(line => line.replace(/^[•\-*]\s*/, '').trim()).filter(point => point);
+          }
+
+          const titleKo = (translationResult.success && translationResult.data.translated) ? translationResult.data.translated : article.title;
+
+          return { ...article, summaryPoints: summaryPoints.length > 0 ? summaryPoints : [article.description], titleKo };
+        } catch (error) {
+          this.logger.warn(`AI enrichment failed for article ${article.id}:`, error.message);
+          return article; 
         }
-
-        const titleKo = (translationResult.success && translationResult.data.translated) ? translationResult.data.translated : article.title;
-
-        return { ...article, summaryPoints: summaryPoints.length > 0 ? summaryPoints : [article.description], titleKo };
-      } catch (error) {
-        this.logger.warn(`AI enrichment failed for article ${article.id}:`, error.message);
-        return article; 
-      }
-    });
-
-    return Promise.all(enrichmentPromises);
+      });
+      
+      const settledBatch = await Promise.all(enrichmentPromises);
+      enrichedArticles.push(...settledBatch);
+    }
+    
+    this.logger.info(`[AI] Enrichment completed for all articles.`);
+    return enrichedArticles;
   }
 
   // ====== 내부: 빠른 길 ======
@@ -237,8 +265,8 @@ class NewsService {
       }
     }
     
-    const p1 = await Promise.race([ Promise.allSettled(phase1), new Promise(r=>setTimeout(()=>r([]), FAST.PHASE1_MS)) ]);
-    const first = (Array.isArray(p1)?p1:[]).filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
+    const settledPromises = await Promise.allSettled(phase1);
+    const first = settledPromises.filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
     this.logger.info(`[${section}] Step 1: Fetched ${first.length} raw articles from phase 1 sources.`);
     
     const filtered = filterRecent(first,336);
@@ -275,8 +303,8 @@ class NewsService {
           }
         }
         
-        const p2 = await Promise.race([ Promise.allSettled(phase2), new Promise(r=>setTimeout(()=>r([]), FAST.PHASE2_MS)) ]);
-        const extra = (Array.isArray(p2)?p2:[]).filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
+        const settledPromises2 = await Promise.allSettled(phase2);
+        const extra = settledPromises2.filter(x=>x.status==='fulfilled').flatMap(x=>x.value||[]);
         const merged = deduplicate(filterRecent([...ranked,...extra],336));
         
         const enriched = await this._enrichArticlesWithAI(merged);
@@ -354,8 +382,19 @@ class NewsService {
       this.logger.info(`[Fetcher] NewsAPI fetched ${articles.length} articles for section: ${section}`);
       return this.normalizeNewsAPIArticles(articles);
     } catch (error) {
-      const status = error.response?.status || 'N/A';
-      this.logger.error(`[Fetcher] NewsAPI error (status: ${status}):`, error.message);
+      this.logger.error('--- [Fetcher] NewsAPI Detailed Error ---');
+      if (error.response) {
+        // 시나리오 B: API 서버가 응답을 보냈을 때 (4xx, 5xx 에러)
+        this.logger.error(`Status: ${error.response.status}`);
+        this.logger.error('Data:', error.response.data); // 여기에 apiKeyDisabled 같은 코드가 찍힙니다.
+      } else if (error.request) {
+        // 응답을 받지 못했을 때
+        this.logger.error('No response received from NewsAPI.');
+      } else {
+        // 시나리오 A: 요청을 보내기 전에 에러가 발생했을 때 (ENOTFOUND 등)
+        this.logger.error('Error setting up request:', error.message);
+      }
+      this.logger.error('--------------------------------------');
       return [];
     }
   }
@@ -385,8 +424,17 @@ class NewsService {
       this.logger.info(`[Fetcher] GNews fetched ${articles.length} articles for section: ${section}`);
       return this.normalizeGNewsArticles(articles);
     } catch (error) {
-      const status = error.response?.status || 'N/A';
-      this.logger.error(`[Fetcher] GNews error (status: ${status}):`, error.message);
+      this.logger.error('--- [Fetcher] GNewsAPI Detailed Error ---');
+      if (error.response) {
+        this.logger.error(`Status: ${error.response.status}`);
+        this.logger.error('Data:', error.response.data);
+      } else if (error.request) {
+        this.logger.error('No response received from GNewsAPI. Request details:', error.request);
+      } else {
+        this.logger.error('Error setting up request:', error.message);
+      }
+      this.logger.error('Full Error Object:', error);
+      this.logger.error('-------------------------------------');
       return [];
     }
   }
@@ -436,26 +484,106 @@ class NewsService {
     }
   }
 
-  async fetchFromRSS(url){
-    try{
-      const feed = await this.rssParser.parseURL(url);
+  async fetchFromRSS(url, retryCount = 0) {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1초
+    
+    try {
+      // 캐시된 ETag/Last-Modified 확인
+      const cacheKey = `rss_${sha1(url)}`;
+      const cached = this.rssFeedCache.get(cacheKey) || {};
+      
+      // 조건부 요청 헤더 설정
+      const conditionalHeaders = {};
+      if (cached.etag) {
+        conditionalHeaders['If-None-Match'] = cached.etag;
+      }
+      if (cached.lastModified) {
+        conditionalHeaders['If-Modified-Since'] = cached.lastModified;
+      }
+      
+      // axios를 사용한 직접 요청 (조건부 헤더 + DNS 설정 포함)
+      const response = await axios.get(url, {
+        timeout: 10000, // 타임아웃 증가
+        headers: {
+          'User-Agent': 'EmarkNews/2.1 (+https://emarknews.com/crawler-info)',
+          'Accept': 'application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5',
+          'Accept-Language': 'ja,en;q=0.9',
+          'Connection': 'keep-alive',
+          ...conditionalHeaders
+        },
+        validateStatus: (status) => status < 500, // 4xx는 에러로 처리하지 않음
+        // DNS 설정 추가
+        family: 4, // IPv4 강제 사용
+        lookup: require('dns').lookup // 시스템 DNS 사용
+      });
+      
+      // 304 Not Modified - 캐시된 데이터 사용
+      if (response.status === 304) {
+        this.logger.info(`[Fetcher] RSS (${url}) - 304 Not Modified, using cached data`);
+        return cached.items || [];
+      }
+      
+      // 4xx 에러 처리 (403, 429 등)
+      if (response.status >= 400 && response.status < 500) {
+        this.logger.warn(`[Fetcher] RSS (${url}) - ${response.status} error, skipping for 60 minutes`);
+        // 쿨다운 설정 (60분)
+        this.rssFeedCache.set(cacheKey, {
+          ...cached,
+          cooldownUntil: Date.now() + (60 * 60 * 1000) // 60분
+        });
+        return [];
+      }
+      
+      // RSS 파싱
+      const feed = await this.rssParser.parseString(response.data);
       const items = feed.items || [];
+      
+      // 캐시 업데이트
+      const newCache = {
+        items: items.map(it => this.normalizeItem({
+          title: it.title || '',
+          url: it.link || '',
+          source: feed.title || domainFromUrl(url),
+          lang: 'en',
+          publishedAt: it.pubDate || it.isoDate || new Date().toISOString(),
+          reactions: 0,
+          followers: 0,
+          domain: domainFromUrl(it.link || ''),
+          _srcType: 'rss'
+        })),
+        etag: response.headers.etag,
+        lastModified: response.headers['last-modified'],
+        lastFetch: Date.now()
+      };
+      
+      this.rssFeedCache.set(cacheKey, newCache);
       this.logger.info(`[Fetcher] RSS (${url}) fetched ${items.length} items.`);
-      return items.map(it => this.normalizeItem({
-        title: it.title || '',
-        url: it.link || '',
-        source: feed.title || domainFromUrl(url),
-        lang: 'en',
-        publishedAt: it.pubDate || it.isoDate || new Date().toISOString(),
-        reactions: 0,
-        followers: 0,
-        domain: domainFromUrl(it.link || ''),
-        _srcType: 'rss'
-      }));
-    } catch(e){ 
-      this.logger.warn(`[Fetcher] RSS fail (${url}):`, e.message); 
-      return []; 
+      
+      return newCache.items;
+      
+    } catch (e) {
+      // 네트워크/5xx/타임아웃 오류에 대한 지수 백오프
+      if (retryCount < maxRetries && this.shouldRetry(e)) {
+        const delay = baseDelay * Math.pow(2, retryCount);
+        this.logger.warn(`[Fetcher] RSS (${url}) retry ${retryCount + 1}/${maxRetries} after ${delay}ms: ${e.message}`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this.fetchFromRSS(url, retryCount + 1);
+      }
+      
+      this.logger.warn(`[Fetcher] RSS fail (${url}):`, e.message);
+      return [];
     }
+  }
+  
+  // 재시도 가능한 오류인지 판단
+  shouldRetry(error) {
+    if (error.code === 'ECONNABORTED') return true; // 타임아웃
+    if (error.code === 'ENOTFOUND') return true; // DNS 오류
+    if (error.code === 'ECONNRESET') return true; // 연결 리셋
+    if (error.response && error.response.status >= 500) return true; // 5xx 오류
+    return false;
   }
 
   // -----------------------------
@@ -606,6 +734,44 @@ class NewsService {
       memoryCache.clear();
       this.logger.info('Memory cache cleared.');
     }
+  }
+
+  /**
+   * ID를 기반으로 캐시에서 단일 기사를 찾습니다.
+   * @param {string} section - 기사 섹션
+   * @param {string} articleId - 찾을 기사의 ID
+   * @returns {Promise<object>} 기사 데이터 또는 에러 메시지
+   */
+  async getArticleById(section, articleId) {
+    // fast, full 순서로 캐시를 확인합니다.
+    const keysToTry = [`${section}_full`, `${section}_fast`];
+    this.logger.info(`[Detail] Searching for articleId: ${articleId} in section: ${section}`);
+
+    for (const key of keysToTry) {
+      let cachedData = null;
+      try {
+        if (this.cache.redis) {
+          cachedData = await this.cache.redis.get(key);
+        } else {
+          cachedData = this.cache.memory.get(key);
+        }
+
+        if (cachedData) {
+          const parsedList = JSON.parse(cachedData);
+          const article = parsedList.data.find(item => item.id === articleId);
+
+          if (article) {
+            this.logger.info(`[Detail] Found article in cache key: ${key}`);
+            return { success: true, data: article };
+          }
+        }
+      } catch (e) {
+        this.logger.warn(`[Detail] Failed to read or parse cache for key ${key}:`, e.message);
+      }
+    }
+
+    this.logger.warn(`[Detail] Article not found in any cache for section: ${section}, id: ${articleId}`);
+    return { success: false, message: 'Article not found or cache expired.' };
   }
 }
 

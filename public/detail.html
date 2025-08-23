@@ -461,7 +461,20 @@
                                 
                                 if (summaryResponse.ok) {
                                     const summaryData = await summaryResponse.json();
-                                    article.fullSummaryPoints = summaryData.data.summary;
+                                    let summary = summaryData.data.summary;
+                                    
+                                    // "2) 상세요약:" 문구 제거 및 정리
+                                    if (typeof summary === 'string') {
+                                        summary = summary
+                                            .replace(/^1\)\s*카드뉴스용[^:]*:\s*/gm, '') // "1) 카드뉴스용..." 제거
+                                            .replace(/^2\)\s*상세요약:\s*/gm, '') // "2) 상세요약:" 제거
+                                            .split('\n')
+                                            .filter(line => line.trim() && !line.match(/^[12]\)/)) // 빈 줄과 번호 줄 제거
+                                            .map(line => line.replace(/^[•\-*]\s*/, '').trim()) // 불릿 포인트 제거
+                                            .filter(line => line.length > 0);
+                                    }
+                                    
+                                    article.fullSummaryPoints = Array.isArray(summary) ? summary : [summary];
                                 }
                             } catch (e) {
                                 console.error('Summary generation failed:', e);
@@ -527,9 +540,16 @@
             document.getElementById('translation-text').textContent = translationContent;
 
             // Set source links
-            const sourceUrl = article.url || "#";
+            window.article = article; // 디버깅용 전역 변수
+            const sourceUrl = article.link || article.url || "#";
+            console.log('Setting sourceUrl:', sourceUrl);
+            console.log('article.link:', article.link);
+            console.log('article.url:', article.url);
+            
             document.getElementById('link-summary').href = sourceUrl;
             document.getElementById('link-translation').href = sourceUrl;
+            
+            console.log('Final href:', document.getElementById('link-summary').href);
             
             // Disable link if no URL
             if (sourceUrl === "#") {

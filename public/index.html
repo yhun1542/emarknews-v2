@@ -215,6 +215,7 @@
         .tag.important { background: #2563eb; }
         .tag.hot { background: #ef4444; }
         .tag.buzz { background: #a855f7; }
+        .tag.default { background: var(--text-secondary); }
 
         .rating-badge {
             background: var(--primary-dark);
@@ -281,30 +282,16 @@
             background: var(--primary-light);
         }
 
-        /* Mobile styles */
         @media (max-width: 768px) {
             :root {
                 --header-height: 60px;
                 --nav-height: 48px;
             }
-
-            body {
-                background: var(--surface-color);
-            }
-
-            .logo-svg {
-                width: 32px;
-                height: 32px;
-            }
-
+            body { background: var(--surface-color); }
+            .logo-svg { width: 32px; height: 32px; }
             .logo-text { font-size: 22px; }
             .logo-com { font-size: 16px; }
-
-            .main {
-                margin: 0;
-                padding: 0;
-            }
-
+            .main { margin: 0; padding: 0; }
             .news-grid {
                 display: block;
                 height: calc(100dvh - var(--header-height) - var(--nav-height));
@@ -312,7 +299,6 @@
                 overflow-y: auto;
                 scroll-snap-type: y mandatory;
             }
-
             .news-item {
                 height: 100%;
                 scroll-snap-align: start;
@@ -321,48 +307,29 @@
                 border: none;
                 border-bottom: 8px solid var(--background-color);
             }
-
             .news-content-wrapper {
                 padding: 1.5rem 1rem;
                 overflow-y: auto;
                 height: 100%;
             }
-
-            .news-title-translated {
-                font-size: 1.5rem;
-            }
-
+            .news-title-translated { font-size: 1.5rem; }
             .news-actions-wrapper {
                 padding: 1rem;
                 margin-top: 1.5rem;
                 background: transparent;
             }
-
-            .view-details-btn {
-                padding: 1rem;
-            }
+            .view-details-btn { padding: 1rem; }
         }
 
-        /* Tablet styles */
         @media (min-width: 769px) and (max-width: 1024px) {
-            .news-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .news-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
-        /* Hide scrollbar */
         .nav-container::-webkit-scrollbar,
         .news-grid::-webkit-scrollbar,
-        .news-content-wrapper::-webkit-scrollbar {
-            display: none;
-        }
+        .news-content-wrapper::-webkit-scrollbar { display: none; }
+        .nav-container, .news-grid, .news-content-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .nav-container, .news-grid, .news-content-wrapper {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        /* Loading spinner */
         .spinner {
             display: inline-block;
             width: 40px;
@@ -372,22 +339,17 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .error-message {
             text-align: center;
             padding: 2rem;
             color: var(--text-secondary);
         }
-
         .error-message h3 {
             color: #dc2626;
             margin-bottom: 1rem;
         }
-
         .retry-button {
             max-width: 200px;
             margin: 1rem auto;
@@ -433,6 +395,10 @@
     <script>
         class EmarkNews {
             constructor() {
+                // [수정 1] 백엔드 API 서버의 전체 주소를 여기에 입력합니다.
+                // 상대경로로 교체 (권장) - CSP/CORS/도메인 분기 모두 해소
+                this.API_BASE_URL = ''; // 동일 오리진
+
                 this.currentSection = 'world';
                 this.articles = [];
                 this.isMobileView = window.innerWidth <= 768;
@@ -442,7 +408,7 @@
 
             init() {
                 this.setupNavigation();
-                this.loadNews('world');
+                this.loadNews(this.currentSection);
                 
                 window.addEventListener('resize', () => {
                     const wasMobile = this.isMobileView;
@@ -471,32 +437,37 @@
             async loadNews(section) {
                 this.showLoading();
                 
+                // [수정 2] 기존 API 엔드포인트를 사용합니다.
+                const url = `${this.API_BASE_URL}/api/${section}`;
+
                 try {
-                    const response = await fetch(`/api/${section}/fast`);
+                    const response = await fetch(url);
                     
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`서버 응답 오류: ${response.status}`);
                     }
                     
                     const data = await response.json();
                     
-                    if (data.success && data.data) {
-                        // 새로운 NewsService 구조: data.data가 직접 배열
-                        // 기존 구조: data.data.articles가 배열
-                        const articles = Array.isArray(data.data) ? data.data : data.data.articles;
+                    if (data.success && Array.isArray(data.data)) {
+                        const articles = data.data;
                         
-                        if (articles && articles.length > 0) {
+                        if (articles.length > 0) {
                             this.articles = articles;
                             this.displayNews(this.articles);
                         } else {
-                            this.showError('뉴스가 없습니다.');
+                            this.showError(`이 섹션에는 최신 뉴스가 없습니다. (작동하지 않는 RSS 피드 때문일 수 있습니다)`);
                         }
                     } else {
-                        throw new Error('Invalid response format');
+                        throw new Error(data.message || '서버에서 받은 데이터 형식이 올바르지 않습니다.');
                     }
                 } catch (error) {
                     console.error('Failed to load news:', error);
-                    this.showError(error.message);
+                    // [수정 3] 네트워크 에러 시 더 명확한 메시지를 보여줍니다.
+                    const errorMessage = error.message.includes('Failed to fetch') 
+                        ? '서버에 연결할 수 없습니다. CORS 설정 또는 네트워크 연결을 확인해주세요.' 
+                        : error.message;
+                    this.showError(errorMessage);
                 }
             }
 
@@ -504,16 +475,14 @@
                 const newsGrid = document.getElementById('news-grid');
                 
                 if (!articles || articles.length === 0) {
-                    newsGrid.innerHTML = '<div class="error-message"><p>뉴스가 없습니다.</p></div>';
-                    this.hideLoading();
-                    newsGrid.style.display = this.isMobileView ? 'block' : 'grid';
+                    // showError를 사용하도록 변경하여 일관성 유지
+                    this.showError('이 섹션에는 표시할 뉴스가 없습니다.');
                     return;
                 }
 
                 const newsHtml = articles.map(article => this.createArticleCard(article)).join('');
                 newsGrid.innerHTML = newsHtml;
                 
-                // Add event listeners to detail buttons
                 this.addDetailButtonListeners();
                 
                 this.hideLoading();
@@ -524,9 +493,10 @@
                 const timeAgo = this.getTimeAgo(article.publishedAt);
                 const rating = parseFloat(article.rating) || 3.0;
                 const displayTitle = article.titleKo || article.title;
-                const summaryPoints = article.summaryPoints || [article.descriptionKo || article.description || '요약 정보가 없습니다.'];
+                const summaryPoints = article.summaryPoints && article.summaryPoints.length > 0 
+                    ? article.summaryPoints 
+                    : [article.descriptionKo || article.description || '요약 정보가 없습니다.'];
                 
-                // Generate tags HTML (only allowed tags)
                 const tagsHtml = (article.tags || [])
                     .map(tag => {
                         const tagClass = this.getTagClass(tag);
@@ -534,21 +504,19 @@
                     })
                     .join('');
                 
-                // Generate summary HTML
                 const maxPoints = this.isMobileView ? 15 : 3;
                 const summaryHtml = summaryPoints
                     .slice(0, maxPoints)
                     .map(point => `
                         <div class="summary-point">
                             <span class="summary-bullet">•</span>
-                            <span class="summary-text">${point}</span>
+                            <span class="summary-text">${this.escapeHtml(point)}</span>
                         </div>
                     `).join('');
                 
-                // Create action buttons
                 const actionsHtml = `
                     <div class="news-actions-wrapper">
-                        <button class="view-details-btn" data-article-id="${article.id}" data-section="${this.currentSection}">
+                        <button class="view-details-btn" data-article-id="${article.id}">
                             ✨ 상세보기
                         </button>
                     </div>
@@ -559,7 +527,7 @@
                         <div class="news-content-wrapper">
                             <div class="news-header">
                                 <div class="news-source-time">
-                                    <span class="news-source">${article.source || 'Unknown'}</span>
+                                    <span class="news-source">${this.escapeHtml(article.source || 'Unknown')}</span>
                                     <span>·</span>
                                     <span class="time-ago">${timeAgo}</span>
                                 </div>
@@ -582,49 +550,37 @@
             }
 
             getTagClass(tag) {
-                const tagMap = {
-                    '긴급': 'urgent',
-                    '중요': 'important',
-                    'Hot': 'hot',
-                    'Buzz': 'buzz'
-                };
+                const tagMap = { '긴급': 'urgent', '중요': 'important', 'Hot': 'hot', 'Buzz': 'buzz' };
                 return tagMap[tag] || 'default';
             }
 
             getTimeAgo(publishedAt) {
+                if (!publishedAt) return '';
                 const now = new Date();
                 const published = new Date(publishedAt);
-                
-                if (isNaN(published.getTime())) {
-                    return '';
-                }
-                
+                if (isNaN(published.getTime())) return '';
                 const diffMs = now - published;
                 const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMins / 60);
-                const diffDays = Math.floor(diffHours / 24);
-                
                 if (diffMins < 1) return '방금 전';
                 if (diffMins < 60) return `${diffMins}분 전`;
+                const diffHours = Math.floor(diffMins / 60);
                 if (diffHours < 24) return `${diffHours}시간 전`;
-                return `${diffDays}일 전`;
+                return `${Math.floor(diffHours / 24)}일 전`;
             }
 
             escapeHtml(text) {
+                if (typeof text !== 'string') return '';
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
             }
 
             addDetailButtonListeners() {
-                const detailButtons = document.querySelectorAll('.view-details-btn');
-                detailButtons.forEach(button => {
+                document.querySelectorAll('.view-details-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.preventDefault();
-                        const articleId = button.getAttribute('data-article-id');
-                        const section = button.getAttribute('data-section');
-                        
-                        if (articleId && section) {
+                        const articleId = button.dataset.articleId;
+                        if (articleId) {
                             this.openDetailPage(articleId);
                         } else {
                             alert('기사 정보를 찾을 수 없습니다.');
@@ -635,26 +591,17 @@
 
             openDetailPage(articleId) {
                 const article = this.articles.find(a => a.id === articleId);
-                
                 if (!article) {
                     alert('기사를 찾을 수 없습니다.');
                     return;
                 }
-                
-                // Store article in sessionStorage
                 sessionStorage.setItem(`article_${this.currentSection}_${articleId}`, JSON.stringify(article));
-                
-                // Navigate to detail page
-                window.location.href = `/detail.html?section=${this.currentSection}&id=${articleId}`;
+                window.open(`/detail.html?section=${this.currentSection}&id=${articleId}`, '_blank');
             }
 
             scrollToTop() {
                 const target = this.isMobileView ? document.getElementById('news-grid') : window;
-                if (target && target.scrollTo) {
-                    target.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
+                target.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
             showLoading() {
@@ -675,10 +622,8 @@
             }
         }
 
-        // Initialize app when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const newsApp = new EmarkNews();
-            window.newsApp = newsApp; // Make it globally accessible
+        document.addEventListener('DOMContentLoaded', () => {
+            window.newsApp = new EmarkNews();
         });
     </script>
 </body>
