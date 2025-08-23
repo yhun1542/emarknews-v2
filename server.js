@@ -34,6 +34,116 @@ app.get('/admin/clear-cache', async (req, res) => {
   }
 });
 
+// Admin endpoint for rating cache invalidation
+app.get('/admin/invalidate-rating-cache', async (req, res) => {
+  try {
+    const sections = ['world', 'kr', 'japan', 'buzz', 'tech', 'business'];
+    const RATING_SERVICE_VERSION = "v2.1"; // newsService와 동일한 버전 사용
+    
+    let clearedCount = 0;
+    for (const section of sections) {
+      try {
+        // Redis에서 캐시 삭제 시도
+        if (process.env.REDIS_URL) {
+          const { createClient } = require('redis');
+          const redis = createClient({ url: process.env.REDIS_URL });
+          await redis.connect();
+          
+          await redis.del(`${section}_fast_${RATING_SERVICE_VERSION}`);
+          await redis.del(`${section}_full_${RATING_SERVICE_VERSION}`);
+          
+          await redis.disconnect();
+          clearedCount += 2;
+        }
+      } catch (e) {
+        logger.warn(`Failed to clear cache for section ${section}:`, e.message);
+      }
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: `Rating cache invalidated for version ${RATING_SERVICE_VERSION}`,
+      clearedKeys: clearedCount,
+      sections: sections
+    });
+  } catch (error) {
+    logger.error('Rating cache invalidation failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to invalidate rating cache',
+      message: error.message
+    });
+  }
+});
+
+// Admin endpoint for ratings-only refresh (AI 번역 유지)
+app.get('/admin/refresh-ratings-only', async (req, res) => {
+  try {
+    const results = await newsService.refreshAllRatingsOnly();
+    
+    const summary = {
+      success: true,
+      message: 'Ratings refreshed without losing AI translations',
+      timestamp: new Date().toISOString(),
+      sections: results
+    };
+    
+    res.status(200).json(summary);
+  } catch (error) {
+    logger.error('Ratings-only refresh failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh ratings',
+      message: error.message
+    });
+  }
+});
+
+// Admin endpoint for single section ratings refresh
+app.get('/admin/refresh-ratings/:section', async (req, res) => {
+  try {
+    const { section } = req.params;
+    const validSections = ['world', 'kr', 'japan', 'buzz', 'tech', 'business'];
+    
+    if (!validSections.includes(section)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid section. Must be one of: ${validSections.join(', ')}`
+      });
+    }
+    
+    const result = await newsService.refreshRatingsOnly(section);
+    
+    if (result) {
+      const ratings = result.data.map(item => parseFloat(item.rating));
+      const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+      
+      res.status(200).json({
+        success: true,
+        message: `Ratings refreshed for section: ${section}`,
+        section: section,
+        articlesCount: result.data.length,
+        avgRating: avgRating.toFixed(1),
+        minRating: Math.min(...ratings),
+        maxRating: Math.max(...ratings),
+        timestamp: result.ratingRefreshedAt
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: `No cached data found for section: ${section}`
+      });
+    }
+  } catch (error) {
+    logger.error(`Ratings refresh failed for section ${req.params.section}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh ratings for section',
+      message: error.message
+    });
+  }
+});
+
 // 2) rate-limit: 표준 헤더만 사용하고, proxy 신뢰 기반 IP 추출
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_WINDOW_MS ?? 60_000),
