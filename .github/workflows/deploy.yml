@@ -1,47 +1,38 @@
 name: Deploy to Railway
+
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      # 1. 레포지토리 체크아웃
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Node.js 환경 세팅
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      # 3. 의존성 설치
+      - name: Install dependencies
+        run: npm ci
 
+      # 4. Railway CLI 설치
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      # 5. Railway 프로젝트/서비스 링크 & 배포
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          echo "🚀 Starting Railway deployment..."
-          railway login --token $RAILWAY_TOKEN
-          railway status
-          echo "📦 Deploying EmarkNews service..."
-          railway up --detach
-          echo "✅ Deployment completed!"
-
-      - name: Wait for deployment
-        run: |
-          echo "⏳ Waiting for deployment to complete..."
-          sleep 30
-
-      - name: Check deployment status
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          echo "🔍 Checking deployment status..."
-          railway status
-          echo "🌐 Getting service URL..."
-          railway domain || echo "Domain not configured yet"
+          railway link --project ff9ce728-97b7-43e9-85db-236aee545841 --service emarknews-v2
+          railway up --service emarknews-v2 --detach
 
