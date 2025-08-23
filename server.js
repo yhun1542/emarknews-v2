@@ -332,9 +332,26 @@ app.get('/api/article/:section/:id', async (req, res) => {
       });
     }
     
+    const article = result.data;
+    
+    // 상세보기에서는 더 자세한 AI 요약 생성
+    if (article.description || article.content) {
+      try {
+        const textToSummarize = article.content || article.description || article.title;
+        const detailedSummary = await aiService.generateSummaryPoints(textToSummarize, 8); // 더 많은 포인트
+        
+        if (detailedSummary && detailedSummary.length > 0) {
+          article.summaryPoints = detailedSummary;
+        }
+      } catch (aiError) {
+        logger.warn(`AI detailed summary failed for article ${id}:`, aiError.message);
+        // AI 실패 시 기존 요약 사용
+      }
+    }
+    
     res.json({
       success: true,
-      data: result.data
+      data: article
     });
   } catch (error) {
     logger.error(`API Error - /api/article/${req.params.section}/${req.params.id}:`, error);
