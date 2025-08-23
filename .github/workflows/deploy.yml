@@ -1,0 +1,47 @@
+name: Deploy to Railway
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "🚀 Starting Railway deployment..."
+          railway login --token $RAILWAY_TOKEN
+          railway status
+          echo "📦 Deploying EmarkNews service..."
+          railway up --detach
+          echo "✅ Deployment completed!"
+
+      - name: Wait for deployment
+        run: |
+          echo "⏳ Waiting for deployment to complete..."
+          sleep 30
+
+      - name: Check deployment status
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "🔍 Checking deployment status..."
+          railway status
+          echo "🌐 Getting service URL..."
+          railway domain || echo "Domain not configured yet"
+
