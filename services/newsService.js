@@ -42,8 +42,8 @@ const FAST = {
   PHASE2_MS: Number(process.env.FAST_PHASE2_DEADLINE_MS || 1500),
   FIRST_BATCH: Number(process.env.FAST_FIRST_BATCH_SIZE || 20), // 40 → 20으로 줄여서 빠른 AI 처리
   FULL_MAX: Number(process.env.FAST_FULL_MAX || 150),
-  TTL_FAST: Number(process.env.FAST_REDIS_TTL_SEC || 60),
-  TTL_FULL: Number(process.env.FULL_REDIS_TTL_SEC || 600),
+  TTL_FAST: Number(process.env.FAST_REDIS_TTL_SEC || 30), // 60 → 30초로 단축
+  TTL_FULL: Number(process.env.FULL_REDIS_TTL_SEC || 300), // 600 → 300초로 단축
 };
 
 const RANK_TAU_MIN = Number(process.env.RANK_TAU_MIN || 90);
