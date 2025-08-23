@@ -8,6 +8,7 @@ const Parser = require('rss-parser');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
 const AIService = require('./aiService'); // AI 서비스 import
+const RatingService = require('./ratingService'); // Rating 서비스 import
 
 // Redis 클라이언트
 let redis;
@@ -249,6 +250,7 @@ class NewsService {
     this.logger = opts.logger || logger;
     this.API_TIMEOUT = 5000;
     this.aiService = new AIService();
+    this.ratingService = new RatingService(); // Rating 서비스 인스턴스 추가
 
     // [LOG] 서비스 시작 시 환경 변수 로드 상태를 명확히 확인합니다.
     this.logger.info('--- Initializing NewsService: Checking Environment Variables ---');
@@ -599,7 +601,8 @@ class NewsService {
     const unique = deduplicate(filtered);
     this.logger.info(`[${section}] Step 3: After deduplication, ${unique.length} unique articles remain.`);
     
-    const ranked = this.rankAndSort(section, unique).slice(0,FAST.FIRST_BATCH);
+    const rankedAll = await this.rankAndSort(section, unique);
+    const ranked = rankedAll.slice(0,FAST.FIRST_BATCH);
     this.logger.info(`[${section}] Step 4: After ranking, top ${ranked.length} articles selected.`);
     const initial = { success: true, data: ranked, section, total:ranked.length, partial:true, timestamp:new Date().toISOString() };
     
@@ -610,8 +613,9 @@ class NewsService {
 
     // Phase1 데이터로 즉시 AI 처리 시작
     this.logger.info(`[${section}] Starting immediate AI processing with ${ranked.length} articles from Phase1`);
-    this._enrichArticlesWithAI(ranked, section).then(enriched => {
-      const aiProcessed = this.rankAndSort(section, enriched).slice(0,FAST.FIRST_BATCH);
+    this._enrichArticlesWithAI(ranked, section).then(async enriched => {
+      const aiProcessedAll = await this.rankAndSort(section, enriched);
+      const aiProcessed = aiProcessedAll.slice(0,FAST.FIRST_BATCH);
       const aiPayload = { success: true, data: aiProcessed, section, total:aiProcessed.length, partial:false, timestamp:new Date().toISOString() };
       
       this.logger.info(`[${section}] AI processing completed. Saving to cache key: ${key}`);
@@ -668,8 +672,9 @@ class NewsService {
         // Phase2 완료 후 전체 데이터로 AI 처리
         if (merged.length > ranked.length) {
           this.logger.info(`[${section}] Starting Phase2 AI processing with ${merged.length} total articles`);
-          this._enrichArticlesWithAI(merged, section).then(enriched => {
-            const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
+          this._enrichArticlesWithAI(merged, section).then(async enriched => {
+            const fullAll = await this.rankAndSort(section, enriched);
+            const full = fullAll.slice(0,FAST.FULL_MAX);
             const payload = { success: true, data: full, section, total:full.length, partial:false, timestamp:new Date().toISOString() };
             
             if (redis) { 
@@ -728,7 +733,8 @@ class NewsService {
     const uniqueRaw = deduplicate(filterRecent(raw, 336));
     
     const enriched = await this._enrichArticlesWithAI(uniqueRaw, section);
-    const full = this.rankAndSort(section, enriched).slice(0,FAST.FULL_MAX);
+    const fullAll = await this.rankAndSort(section, enriched);
+    const full = fullAll.slice(0,FAST.FULL_MAX);
     const payload = { success: true, data: full, section, total:full.length, partial:false, timestamp:new Date().toISOString() };
     
     try {
@@ -1191,13 +1197,15 @@ class NewsService {
     if (section === 'buzz') tags.add('Buzz');
     if (item.score > 0.65) tags.add('Hot');
     if (title.includes('속보') || title.includes('긴급') || title.includes('breaking')) tags.add('긴급');
-    if (title.includes('중요') || title.includes('important')) tags.add('중요');
-    return Array.from(tags).slice(0, 2);
+    return Array.from(tags);
   }
 
-  rankAndSort(section, items) {
+  async rankAndSort(section, items) {
+    if (!items || items.length === 0) return [];
+    const freshness = (ageMin) => Math.max(0, 1 - (ageMin / (24 * 60)));
     const w = SECTION_WEIGHTS[section] || DEFAULT_WEIGHTS.world;
-    return items.map(it => {
+    
+    const rankedItems = await Promise.all(items.map(async (it) => {
       const ageMin = it.ageMinutes || 0;
       const domain = it.domain || '';
       const f_score = freshness(ageMin);
@@ -1205,17 +1213,21 @@ class NewsService {
       const e_score = Math.min(1, Math.log10((it.reactions || 0) + 1) / 4);
       const s_score = (SOURCE_WEIGHTS[domain] || 1) / 5;
       const score = (w.f * f_score) + (w.v * v_score) + (w.e * e_score) + (w.s * s_score);
-      const rating = Math.max(1.0, Math.min(5.0, (score * 4) + 1)).toFixed(1);
+      
+      // ratingService를 사용한 고급 평점 계산
+      const rating = await this.ratingService.calculateRating(it);
       
       return { 
           ...it, 
           score,
-          rating,
+          rating: rating.toFixed(1),
           titleKo: it.titleKo || it.title, 
           summaryPoints: (it.summaryPoints && it.summaryPoints.length > 0) ? it.summaryPoints : (it.description ? [it.description] : []),
           tags: this.generateTags(it, section)
       };
-    }).sort((a, b) => b.score - a.score);
+    }));
+    
+    return rankedItems.sort((a, b) => b.score - a.score);
   }
 
   // ====== 기타 유틸리티 ======
