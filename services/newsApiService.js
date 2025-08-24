@@ -30,24 +30,48 @@ class NewsApiService {
         const articles = [];
         
         try {
-            // NewsAPI - 국제 뉴스
+            // 🚨 속보/긴급 뉴스 - Reuters, AP, Bloomberg
             if (this.newsapi) {
-                const newsApiResults = await this.newsapi.v2.topHeadlines({
-                    category: 'general',
-                    language: 'en',
-                    pageSize: 20
+                const breakingNews = await this.newsapi.v2.topHeadlines({
+                    sources: 'reuters,associated-press,bloomberg',
+                    sortBy: 'publishedAt',
+                    pageSize: 15
                 });
                 
-                if (newsApiResults.articles) {
-                    articles.push(...newsApiResults.articles.map(article => ({
+                if (breakingNews.articles) {
+                    articles.push(...breakingNews.articles.map(article => ({
                         id: this.generateId(article.url),
                         title: article.title,
                         description: article.description,
                         link: article.url,
-                        source: `NewsAPI - ${article.source.name}`,
+                        source: `Breaking - ${article.source.name}`,
                         publishedAt: article.publishedAt,
                         domain: this.extractDomain(article.url),
-                        _srcType: 'newsapi'
+                        _srcType: 'newsapi-breaking'
+                    })));
+                }
+            }
+            
+            // 🌍 분쟁/중요 이슈 - Reuters, AP, Al Jazeera
+            if (this.newsapi) {
+                const conflictNews = await this.newsapi.v2.everything({
+                    q: 'global conflict',
+                    sources: 'reuters,associated-press,al-jazeera-english',
+                    sortBy: 'publishedAt',
+                    language: 'en',
+                    pageSize: 10
+                });
+                
+                if (conflictNews.articles) {
+                    articles.push(...conflictNews.articles.map(article => ({
+                        id: this.generateId(article.url),
+                        title: article.title,
+                        description: article.description,
+                        link: article.url,
+                        source: `Global Issues - ${article.source.name}`,
+                        publishedAt: article.publishedAt,
+                        domain: this.extractDomain(article.url),
+                        _srcType: 'newsapi-conflict'
                     })));
                 }
             }
@@ -89,24 +113,25 @@ class NewsApiService {
         const articles = [];
         
         try {
-            // NewsAPI - 기술 뉴스
+            // 💡 테크/혁신 뉴스 - TechCrunch, The Verge, Wired
             if (this.newsapi) {
-                const newsApiResults = await this.newsapi.v2.topHeadlines({
-                    category: 'technology',
+                const techNews = await this.newsapi.v2.everything({
+                    sources: 'techcrunch,the-verge,wired',
+                    sortBy: 'popularity',
                     language: 'en',
                     pageSize: 20
                 });
                 
-                if (newsApiResults.articles) {
-                    articles.push(...newsApiResults.articles.map(article => ({
+                if (techNews.articles) {
+                    articles.push(...techNews.articles.map(article => ({
                         id: this.generateId(article.url),
                         title: article.title,
                         description: article.description,
                         link: article.url,
-                        source: `NewsAPI - ${article.source.name}`,
+                        source: `Tech - ${article.source.name}`,
                         publishedAt: article.publishedAt,
                         domain: this.extractDomain(article.url),
-                        _srcType: 'newsapi'
+                        _srcType: 'newsapi-tech'
                     })));
                 }
             }
@@ -148,24 +173,25 @@ class NewsApiService {
         const articles = [];
         
         try {
-            // NewsAPI - 비즈니스 뉴스
+            // 💼 경제/시장 뉴스 - Bloomberg, Financial Times, CNBC
             if (this.newsapi) {
-                const newsApiResults = await this.newsapi.v2.topHeadlines({
-                    category: 'business',
+                const businessNews = await this.newsapi.v2.everything({
+                    sources: 'bloomberg,financial-times,cnbc',
+                    sortBy: 'publishedAt',
                     language: 'en',
                     pageSize: 20
                 });
                 
-                if (newsApiResults.articles) {
-                    articles.push(...newsApiResults.articles.map(article => ({
+                if (businessNews.articles) {
+                    articles.push(...businessNews.articles.map(article => ({
                         id: this.generateId(article.url),
                         title: article.title,
                         description: article.description,
                         link: article.url,
-                        source: `NewsAPI - ${article.source.name}`,
+                        source: `Business - ${article.source.name}`,
                         publishedAt: article.publishedAt,
                         domain: this.extractDomain(article.url),
-                        _srcType: 'newsapi'
+                        _srcType: 'newsapi-business'
                     })));
                 }
             }
@@ -367,24 +393,24 @@ class NewsApiService {
         const articles = [];
         
         try {
-            // NewsAPI - 엔터테인먼트 뉴스
+            // 🎬 버즈/재미 뉴스 - Variety, Hollywood Reporter
             if (this.newsapi) {
-                const newsApiResults = await this.newsapi.v2.topHeadlines({
-                    category: 'entertainment',
-                    language: 'en',
+                const buzzNews = await this.newsapi.v2.everything({
+                    sources: 'variety,entertainment-weekly,the-hollywood-reporter',
+                    sortBy: 'popularity',
                     pageSize: 20
                 });
                 
-                if (newsApiResults.articles) {
-                    articles.push(...newsApiResults.articles.map(article => ({
+                if (buzzNews.articles) {
+                    articles.push(...buzzNews.articles.map(article => ({
                         id: this.generateId(article.url),
                         title: article.title,
                         description: article.description,
                         link: article.url,
-                        source: `NewsAPI - ${article.source.name}`,
+                        source: `Entertainment - ${article.source.name}`,
                         publishedAt: article.publishedAt,
                         domain: this.extractDomain(article.url),
-                        _srcType: 'newsapi'
+                        _srcType: 'newsapi-entertainment'
                     })));
                 }
             }
