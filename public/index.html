@@ -540,7 +540,9 @@
                 const actionsHtml = `
                     <div class="news-actions-wrapper">
                         <div class="publish-date">${publishDate}</div>
-                        <button class="view-details-btn" data-article-id="${article.id}">
+                        <button class="view-details-btn" 
+                                data-article-id="${article.id}" 
+                                data-section="${this.currentSection}">
                             ✨ 상세보기
                         </button>
                     </div>
@@ -648,6 +650,7 @@
                     
                     buttons.forEach((button, index) => {
                         const articleId = button.dataset.articleId;
+                        const section = button.dataset.section; // 버튼에 저장된 섹션 정보 읽기
                         
                         // 기존 이벤트 제거 후 새로 추가
                         const newButton = button.cloneNode(true);
@@ -655,10 +658,10 @@
                         
                         newButton.addEventListener('click', (e) => {
                             e.preventDefault();
-                            console.log('Detail button clicked, articleId:', articleId);
+                            console.log('Detail button clicked, articleId:', articleId, 'section:', section);
                             
-                            if (articleId) {
-                                this.openDetailPage(articleId);
+                            if (articleId && section) {
+                                this.openDetailPage(articleId, section); // 섹션 정보도 함께 전달
                             } else {
                                 alert('기사 정보를 찾을 수 없습니다.');
                             }
@@ -667,14 +670,15 @@
                 }, 100);
             }
 
-            openDetailPage(articleId) {
+            openDetailPage(articleId, section) {
                 const article = this.articles.find(a => a.id === articleId);
                 if (!article) {
                     alert('기사를 찾을 수 없습니다.');
                     return;
                 }
-                sessionStorage.setItem(`article_${this.currentSection}_${articleId}`, JSON.stringify(article));
-                window.open(`/detail.html?section=${this.currentSection}&id=${articleId}`, '_blank');
+                // 인자로 받은 section을 사용 (this.currentSection 대신)
+                sessionStorage.setItem(`article_${section}_${articleId}`, JSON.stringify(article));
+                window.open(`/detail.html?section=${section}&id=${articleId}`, '_blank');
             }
 
             scrollToTop() {
