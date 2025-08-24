@@ -233,39 +233,72 @@ class NewsApiService {
         const articles = [];
         
         try {
-            // NewsAPI - 한국 관련 뉴스만
+            // 🇰🇷 한국 일반 뉴스 - 카테고리별
             if (this.newsapi) {
-                for (const keyword of this.koreaKeywords.slice(0, 5)) { // 상위 5개 키워드만 사용
+                const categories = ['general', 'business', 'technology', 'entertainment', 'sports', 'health', 'science'];
+                
+                for (const category of categories) {
                     try {
-                        const newsApiResults = await this.newsapi.v2.everything({
-                            q: keyword,
-                            language: 'en',
-                            sortBy: 'publishedAt',
+                        const koreanNews = await this.newsapi.v2.topHeadlines({
+                            country: 'kr',
+                            category: category,
                             pageSize: 10
                         });
                         
-                        if (newsApiResults.articles) {
-                            const filteredArticles = newsApiResults.articles
-                                .filter(article => this.isKoreaRelated(article.title + ' ' + (article.description || '')))
-                                .map(article => ({
-                                    id: this.generateId(article.url),
-                                    title: article.title,
-                                    description: article.description,
-                                    link: article.url,
-                                    source: `NewsAPI - ${article.source.name}`,
-                                    publishedAt: article.publishedAt,
-                                    domain: this.extractDomain(article.url),
-                                    _srcType: 'newsapi',
-                                    needsTranslation: true // 한국어 번역 필요 표시
-                                }));
-                            
-                            articles.push(...filteredArticles);
+                        if (koreanNews.articles) {
+                            articles.push(...koreanNews.articles.map(article => ({
+                                id: this.generateId(article.url),
+                                title: article.title,
+                                description: article.description,
+                                link: article.url,
+                                source: `Korea ${category} - ${article.source.name}`,
+                                publishedAt: article.publishedAt,
+                                domain: this.extractDomain(article.url),
+                                _srcType: 'newsapi-korea',
+                                needsTranslation: true // 한국어 번역 필요 표시
+                            })));
                         }
                         
                         // API 호출 간격 조절
-                        await this.delay(500);
+                        await this.delay(300);
                     } catch (error) {
-                        console.error(`Error fetching Korea news for keyword ${keyword}:`, error.message);
+                        console.error(`Error fetching Korea ${category} news:`, error.message);
+                    }
+                }
+                
+                // 🇰🇷 한국 주제별 뉴스 - 한국어 검색
+                const koreanTopics = [
+                    { q: '한국+정치', label: 'Politics' },
+                    { q: '한국+경제', label: 'Economy' },
+                    { q: '한국+사회이슈', label: 'Social Issues' }
+                ];
+                
+                for (const topic of koreanTopics) {
+                    try {
+                        const topicNews = await this.newsapi.v2.everything({
+                            q: topic.q,
+                            language: 'ko',
+                            sortBy: 'publishedAt',
+                            pageSize: 8
+                        });
+                        
+                        if (topicNews.articles) {
+                            articles.push(...topicNews.articles.map(article => ({
+                                id: this.generateId(article.url),
+                                title: article.title,
+                                description: article.description,
+                                link: article.url,
+                                source: `Korea ${topic.label} - ${article.source.name}`,
+                                publishedAt: article.publishedAt,
+                                domain: this.extractDomain(article.url),
+                                _srcType: 'newsapi-korea-topic',
+                                needsTranslation: false // 이미 한국어
+                            })));
+                        }
+                        
+                        await this.delay(300);
+                    } catch (error) {
+                        console.error(`Error fetching Korea ${topic.label} news:`, error.message);
                     }
                 }
             }
@@ -313,39 +346,72 @@ class NewsApiService {
         const articles = [];
         
         try {
-            // NewsAPI - 일본 관련 뉴스만
+            // 🇯🇵 일본 일반 뉴스 - 카테고리별
             if (this.newsapi) {
-                for (const keyword of this.japanKeywords.slice(0, 5)) { // 상위 5개 키워드만 사용
+                const categories = ['general', 'business', 'technology', 'entertainment', 'sports', 'health', 'science'];
+                
+                for (const category of categories) {
                     try {
-                        const newsApiResults = await this.newsapi.v2.everything({
-                            q: keyword,
-                            language: 'en',
-                            sortBy: 'publishedAt',
+                        const japanNews = await this.newsapi.v2.topHeadlines({
+                            country: 'jp',
+                            category: category,
                             pageSize: 10
                         });
                         
-                        if (newsApiResults.articles) {
-                            const filteredArticles = newsApiResults.articles
-                                .filter(article => this.isJapanRelated(article.title + ' ' + (article.description || '')))
-                                .map(article => ({
-                                    id: this.generateId(article.url),
-                                    title: article.title,
-                                    description: article.description,
-                                    link: article.url,
-                                    source: `NewsAPI - ${article.source.name}`,
-                                    publishedAt: article.publishedAt,
-                                    domain: this.extractDomain(article.url),
-                                    _srcType: 'newsapi',
-                                    needsTranslation: true // 한국어 번역 필요 표시
-                                }));
-                            
-                            articles.push(...filteredArticles);
+                        if (japanNews.articles) {
+                            articles.push(...japanNews.articles.map(article => ({
+                                id: this.generateId(article.url),
+                                title: article.title,
+                                description: article.description,
+                                link: article.url,
+                                source: `Japan ${category} - ${article.source.name}`,
+                                publishedAt: article.publishedAt,
+                                domain: this.extractDomain(article.url),
+                                _srcType: 'newsapi-japan',
+                                needsTranslation: true // 한국어 번역 필요 표시
+                            })));
                         }
                         
                         // API 호출 간격 조절
-                        await this.delay(500);
+                        await this.delay(300);
                     } catch (error) {
-                        console.error(`Error fetching Japan news for keyword ${keyword}:`, error.message);
+                        console.error(`Error fetching Japan ${category} news:`, error.message);
+                    }
+                }
+                
+                // 🇯🇵 일본 주제별 뉴스 - 일본어 검색
+                const japanTopics = [
+                    { q: '일본+정치', label: 'Politics' },
+                    { q: '일본+경제', label: 'Economy' },
+                    { q: '일본+사회이슈', label: 'Social Issues' }
+                ];
+                
+                for (const topic of japanTopics) {
+                    try {
+                        const topicNews = await this.newsapi.v2.everything({
+                            q: topic.q,
+                            language: 'ja',
+                            sortBy: 'publishedAt',
+                            pageSize: 8
+                        });
+                        
+                        if (topicNews.articles) {
+                            articles.push(...topicNews.articles.map(article => ({
+                                id: this.generateId(article.url),
+                                title: article.title,
+                                description: article.description,
+                                link: article.url,
+                                source: `Japan ${topic.label} - ${article.source.name}`,
+                                publishedAt: article.publishedAt,
+                                domain: this.extractDomain(article.url),
+                                _srcType: 'newsapi-japan-topic',
+                                needsTranslation: true // 일본어 → 한국어 번역 필요
+                            })));
+                        }
+                        
+                        await this.delay(300);
+                    } catch (error) {
+                        console.error(`Error fetching Japan ${topic.label} news:`, error.message);
                     }
                 }
             }
