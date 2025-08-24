@@ -51,7 +51,7 @@
         @media (max-width: 768px) {
             :root { --header-height: 60px; --nav-height: 48px; } body { background: var(--surface-color); } .logo-svg { width: 32px; height: 32px; } .logo-text { font-size: 22px; } .logo-com { font-size: 16px; } .main { margin: 0; padding: 0; }
             .news-grid { display: block; height: calc(100dvh - var(--header-height) - var(--nav-height)); height: calc(100vh - var(--header-height) - var(--nav-height)); overflow-y: auto; scroll-snap-type: y mandatory; }
-            .news-item { height: 100%; scroll-snap-align: start; border-radius: 0; box-shadow: none; border: none; border-bottom: 8px solid var(--background-color); }
+            .news-item { height: 100%; scroll-snap-align: start; border-radius: 0; box-shadow: none; border: none; border-bottom: 8px solid var(--background-color); display: flex; flex-direction: column; }
             .news-content-wrapper { padding: 1.5rem 1rem; overflow-y: auto; height: 100%; }
             .news-title-translated { font-size: 1.5rem; }
             .news-actions-wrapper { padding: 1rem; margin-top: 1.5rem; background: transparent; }
