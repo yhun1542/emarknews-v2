@@ -2,13 +2,12 @@
 const cron = require('node-cron');
 
 class CacheScheduler {
-    constructor(newsService) {
+    constructor(newsService, io = null) {
         this.newsService = newsService;
+        this.io = io; // WebSocket 서버 인스턴스
         this.isRunning = false;
-    }
-
-    start() {
-        if (this.isRunning) {
+        this.jobs = {};
+    }if (this.isRunning) {
             console.log('Cache scheduler is already running');
             return;
         }
@@ -22,6 +21,15 @@ class CacheScheduler {
                 console.log('🔄 Auto-refreshing world cache...');
                 await this.newsService.getSectionFast('world');
                 console.log('✅ World cache refreshed successfully');
+                
+                // WebSocket으로 클라이언트에 알림
+                if (this.io) {
+                    this.io.emit('cache-updated', {
+                        section: 'world',
+                        message: 'World news updated',
+                        timestamp: new Date().toISOString()
+                    });
+                }
             } catch (error) {
                 console.error('❌ Failed to refresh world cache:', error.message);
             }
@@ -33,6 +41,15 @@ class CacheScheduler {
                 console.log('🔄 Auto-refreshing tech cache...');
                 await this.newsService.getSectionFast('tech');
                 console.log('✅ Tech cache refreshed successfully');
+                
+                // WebSocket으로 클라이언트에 알림
+                if (this.io) {
+                    this.io.emit('cache-updated', {
+                        section: 'tech',
+                        message: 'Tech news updated',
+                        timestamp: new Date().toISOString()
+                    });
+                }
             } catch (error) {
                 console.error('❌ Failed to refresh tech cache:', error.message);
             }
@@ -44,6 +61,15 @@ class CacheScheduler {
                 console.log('🔄 Auto-refreshing business cache...');
                 await this.newsService.getSectionFast('business');
                 console.log('✅ Business cache refreshed successfully');
+                
+                // WebSocket으로 클라이언트에 알림
+                if (this.io) {
+                    this.io.emit('cache-updated', {
+                        section: 'business',
+                        message: 'Business news updated',
+                        timestamp: new Date().toISOString()
+                    });
+                }
             } catch (error) {
                 console.error('❌ Failed to refresh business cache:', error.message);
             }
@@ -55,6 +81,15 @@ class CacheScheduler {
                 console.log('🔄 Auto-refreshing buzz cache...');
                 await this.newsService.getSectionFast('buzz');
                 console.log('✅ Buzz cache refreshed successfully');
+                
+                // WebSocket으로 클라이언트에 알림
+                if (this.io) {
+                    this.io.emit('cache-updated', {
+                        section: 'buzz',
+                        message: 'Buzz news updated',
+                        timestamp: new Date().toISOString()
+                    });
+                }
             } catch (error) {
                 console.error('❌ Failed to refresh buzz cache:', error.message);
             }
@@ -63,14 +98,28 @@ class CacheScheduler {
         // 매 시간마다 korea, japan 섹션 캐시 갱신
         this.asiaRefreshJob = cron.schedule('0 * * * *', async () => {
             try {
-                console.log('🔄 Auto-refreshing korea and japan cache...');
+                console.log('🔄 Auto-refreshing Korea and Japan cache...');
                 await Promise.all([
-                    this.newsService.getSectionFast('korea'),
+                    this.newsService.getSectionFast('kr'),
                     this.newsService.getSectionFast('japan')
                 ]);
                 console.log('✅ Korea and Japan cache refreshed successfully');
+                
+                // WebSocket으로 클라이언트에 알림
+                if (this.io) {
+                    this.io.emit('cache-updated', {
+                        section: 'kr',
+                        message: 'Korea news updated',
+                        timestamp: new Date().toISOString()
+                    });
+                    this.io.emit('cache-updated', {
+                        section: 'japan',
+                        message: 'Japan news updated',
+                        timestamp: new Date().toISOString()
+                    });
+                }
             } catch (error) {
-                console.error('❌ Failed to refresh asia cache:', error.message);
+                console.error('❌ Failed to refresh Korea/Japan cache:', error.message);
             }
         });
 

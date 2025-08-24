@@ -9,6 +9,8 @@ const morgan = require('morgan');
 const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 const logger = require('./utils/logger');
 const NewsService = require('./services/newsService');
 const AIService = require('./services/aiService');
@@ -16,6 +18,13 @@ const CacheScheduler = require('./services/cacheScheduler');
 const RSSMonitor = require('./services/rssMonitor');
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = process.env.PORT || 8080;
 
 // 1) 프록시 신뢰 (Railway/Nginx 등 1-hop 프록시 환경)
@@ -25,7 +34,7 @@ app.set('trust proxy', true); // Railway 프록시 환경에서 X-Forwarded-For 
 // Initialize services
 const newsService = new NewsService();
 const aiService = new AIService();
-const cacheScheduler = new CacheScheduler(newsService);
+const cacheScheduler = new CacheScheduler(newsService, io); // WebSocket 전달
 const rssMonitor = new RSSMonitor();
 
 // Admin endpoint for cache clearing
@@ -679,11 +688,27 @@ app.get('*', (req, res) => {
 
 
 
+// WebSocket 연결 처리
+io.on('connection', (socket) => {
+  logger.info('Client connected to WebSocket', { socketId: socket.id });
+  
+  socket.on('disconnect', () => {
+    logger.info('Client disconnected from WebSocket', { socketId: socket.id });
+  });
+  
+  // 클라이언트에게 연결 확인 메시지 전송
+  socket.emit('connected', { 
+    message: 'WebSocket connected successfully',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   logger.info(`EmarkNews server running on port ${PORT}`, { service: 'emarknews' });
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`, { service: 'emarknews' });
   logger.info(`Health check: http://localhost:${PORT}/health`, { service: 'emarknews' });
+  logger.info(`WebSocket server ready for real-time updates`, { service: 'emarknews' });
   
   // 자동 캐시 갱신 스케줄러 시작
   cacheScheduler.start();

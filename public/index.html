@@ -6,6 +6,7 @@
     <title>EmarkNews - AI 실시간 뉴스</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root {
             --primary-color: #5a4fcf;
@@ -701,6 +702,115 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             window.newsApp = new EmarkNews();
+            
+            // WebSocket 연결 설정
+            const socket = io();
+            
+            socket.on('connected', (data) => {
+                console.log('✅ WebSocket connected:', data.message);
+                
+                // 연결 상태 표시 (선택적)
+                const statusIndicator = document.createElement('div');
+                statusIndicator.id = 'connection-status';
+                statusIndicator.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: #10b981;
+                    color: white;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    z-index: 10000;
+                    opacity: 0.9;
+                `;
+                statusIndicator.textContent = '🔴 실시간 연결됨';
+                document.body.appendChild(statusIndicator);
+                
+                // 3초 후 숨기기
+                setTimeout(() => {
+                    if (statusIndicator) {
+                        statusIndicator.style.opacity = '0';
+                        setTimeout(() => statusIndicator.remove(), 300);
+                    }
+                }, 3000);
+            });
+            
+            socket.on('cache-updated', (data) => {
+                console.log('📰 Cache updated:', data);
+                
+                // 현재 보고 있는 섹션과 업데이트된 섹션이 같으면 새로고침
+                const currentSection = window.newsApp.currentSection;
+                if (currentSection === data.section) {
+                    console.log(`🔄 Refreshing ${data.section} section...`);
+                    
+                    // 부드러운 새로고침 애니메이션
+                    const newsContainer = document.getElementById('news-container');
+                    if (newsContainer) {
+                        // 페이드 아웃
+                        newsContainer.style.transition = 'opacity 0.3s ease';
+                        newsContainer.style.opacity = '0.7';
+                        
+                        // 업데이트 알림 표시
+                        const updateNotification = document.createElement('div');
+                        updateNotification.style.cssText = `
+                            position: fixed;
+                            top: 80px;
+                            right: 20px;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            padding: 12px 20px;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-weight: 500;
+                            z-index: 10000;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                            transform: translateX(100%);
+                            transition: transform 0.3s ease;
+                        `;
+                        updateNotification.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span>🔄</span>
+                                <span>${data.message}</span>
+                            </div>
+                        `;
+                        document.body.appendChild(updateNotification);
+                        
+                        // 슬라이드 인 애니메이션
+                        setTimeout(() => {
+                            updateNotification.style.transform = 'translateX(0)';
+                        }, 100);
+                        
+                        // 1초 후 뉴스 새로고침
+                        setTimeout(async () => {
+                            try {
+                                await window.newsApp.loadNews(currentSection);
+                                
+                                // 페이드 인
+                                newsContainer.style.opacity = '1';
+                                
+                                // 알림 제거
+                                setTimeout(() => {
+                                    updateNotification.style.transform = 'translateX(100%)';
+                                    setTimeout(() => updateNotification.remove(), 300);
+                                }, 2000);
+                                
+                            } catch (error) {
+                                console.error('Failed to refresh news:', error);
+                                newsContainer.style.opacity = '1';
+                                updateNotification.remove();
+                            }
+                        }, 1000);
+                    }
+                }
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('❌ WebSocket disconnected');
+            });
+            
+            // 전역에서 접근 가능하도록 설정
+            window.socket = socket;
         });
     </script>
 </body>
