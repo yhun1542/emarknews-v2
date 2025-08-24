@@ -227,28 +227,40 @@
         .bottom-nav {
             display: flex;
             justify-content: center;
+            gap: 16px;
             margin-top: 32px;
             padding-top: 24px;
             border-top: 1px solid var(--border-color);
         }
 
-        .bottom-back-button {
+        .action-button {
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 32px;
+            padding: 12px 24px;
             border-radius: 10px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
+            min-width: 120px;
         }
 
-        .bottom-back-button:hover {
+        .action-button:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
+        }
+
+        .action-button:first-child {
+            background: var(--text-secondary);
+            box-shadow: 0 4px 16px rgba(100, 116, 139, 0.3);
+        }
+
+        .action-button:first-child:hover {
+            background: #475569;
+            box-shadow: 0 6px 24px rgba(100, 116, 139, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -257,9 +269,19 @@
             }
             
             .article-title {
-                font-size: 1.6rem;
+                font-size: 1.5rem;
             }
             
+            .bottom-nav {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .action-button {
+                width: 100%;
+                min-width: auto;
+            }
+        }   
             .article-meta {
                 flex-direction: column;
                 align-items: flex-start;
@@ -285,33 +307,12 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="bottom-back-button" onclick="closeWindow()">닫기</button>
+            <button class="action-button close-button" onclick="window.history.back()">← 뒤로가기</button>
+            <button class="action-button close-button" onclick="window.location.href='/'">← 목록으로</button>
         </div>
     </div>
 
     <script>
-        function closeWindow() {
-            try {
-                // 브라우저 히스토리가 있으면 뒤로가기
-                if (window.history.length > 1) {
-                    window.history.back();
-                    return;
-                }
-                
-                // 새 탭에서 열렸으면 탭 닫기 시도
-                if (window.opener && !window.opener.closed) {
-                    window.close();
-                    return;
-                }
-                
-                // 모든 방법이 실패하면 메인페이지로 이동
-                window.location.href = '/';
-            } catch (error) {
-                // 오류 발생 시 메인페이지로 이동
-                console.error('Close window error:', error);
-                window.location.href = '/';
-            }
-        }
 
         function formatDateTime(dateString) {
             try {
