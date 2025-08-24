@@ -39,6 +39,9 @@ const rssMonitor = new RSSMonitor();
 
 // Admin endpoint for cache clearing
 app.get('/admin/clear-cache', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     await newsService.clearCache();
     res.status(200).send('Cache cleared successfully!');
@@ -49,6 +52,9 @@ app.get('/admin/clear-cache', async (req, res) => {
 
 // Admin endpoint for rating cache invalidation
 app.get('/admin/invalidate-rating-cache', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const sections = ['world', 'kr', 'japan', 'buzz', 'tech', 'business'];
     const RATING_SERVICE_VERSION = "v2.1"; // newsService와 동일한 버전 사용
@@ -91,6 +97,9 @@ app.get('/admin/invalidate-rating-cache', async (req, res) => {
 
 // Admin endpoint for ratings-only refresh (AI 번역 유지)
 app.get('/admin/refresh-ratings-only', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const results = await newsService.refreshAllRatingsOnly();
     
@@ -319,6 +328,9 @@ app.get('/health', (req, res) => {
 
 // New NewsService API Routes (빠른 로딩)
 app.get('/api/:section/fast', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   // 30초 타임아웃 설정
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
@@ -368,6 +380,9 @@ app.get('/api/:section/fast', async (req, res) => {
 
 // AI 기능이 포함된 완전한 데이터를 제공하는 엔드포인트
 app.get('/api/:section/full', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const { section } = req.params;
     // 이미 만들어둔 getSectionFull 함수를 그대로 사용합니다.
@@ -397,6 +412,9 @@ app.get('/api/summarize', (req, res) => {
 
 // AI Translation endpoint (moved up to avoid route conflicts)
 app.post('/api/translate', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const { text, targetLang = 'ko' } = req.body;
     
@@ -429,6 +447,9 @@ app.post('/api/translate', async (req, res) => {
 
 // AI Summary endpoint (moved up to avoid route conflicts)
 app.post('/api/summarize', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const { text, maxPoints = 5, detailed = false } = req.body;
     
@@ -462,6 +483,9 @@ app.post('/api/summarize', async (req, res) => {
 
 // New NewsService API Routes (완전체)
 app.get('/api/:section', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const { section } = req.params;
     const validSections = ['world', 'kr', 'korea', 'japan', 'buzz', 'tech', 'business'];
@@ -491,6 +515,9 @@ app.get('/api/news/world', worldHandler); // 기존 동일 경로가 있어도 �
 
 // API Routes
 app.get('/api/news/:section', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const { section } = req.params;
     const { page = 1, limit = 30, useCache = 'true' } = req.query;
@@ -523,6 +550,9 @@ app.get('/api/news/:section', async (req, res) => {
 
 // Fast article detail endpoint (Redis optimized)
 app.get('/api/article/:section/:id/fast', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   const startTime = Date.now();
   try {
     const { section, id } = req.params;
@@ -554,6 +584,9 @@ app.get('/api/article/:section/:id/fast', async (req, res) => {
 
 // Get specific article
 app.get('/api/article/:section/:id', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     const { section, id } = req.params;
     const result = await newsService.getArticleById(section, id);
@@ -698,6 +731,9 @@ app.get('/api/stats', (req, res) => {
 
 // Clear cache endpoint (admin only - add auth in production)
 app.post('/api/cache/clear', async (req, res) => {
+  // 브라우저가 이 응답을 캐시하지 않도록 헤더 설정
+  res.set('Cache-Control', 'no-store');
+  
   try {
     await newsService.clearCache();
     res.json({
