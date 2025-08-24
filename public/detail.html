@@ -41,16 +41,18 @@
             gap: 0.5rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(90, 79, 207, 0.2);
         }
         .close-button {
-            background: var(--text-secondary); color: white; min-width: 120px; text-align: center;
+            background: #4A5568; color: #FFFFFF; min-width: 120px; text-align: center; justify-content: center;
         }
         .close-button:hover { background: var(--text-color); }
         .action-button:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(90, 79, 207, 0.3); }
         .loading, .error { text-align: center; padding: 3rem; font-size: 1.1rem; color: var(--text-secondary); }
         .error { color: #dc2626; background: #fff1f2; border: 1px solid #ffdde0; border-radius: 8px; }
         @media (max-width: 768px) {
-            body { padding: 0; } .container { margin: 0; max-width: 100%; }
-            .header, .content { padding: 1.5rem 1rem; border-radius: 0; margin-bottom: 0.75rem; }
-            .article-title { font-size: 1.6rem; }
+            body { padding: 0; } .container { margin: 0; max-width: 100%; padding-top: 0.5rem; }
+            .header { padding: 1rem 1rem 0.5rem 1rem; border-radius: 0; margin-bottom: 0.25rem; }
+            .content { padding: 0.75rem 1rem 1.5rem 1rem; border-radius: 0; margin-bottom: 0.75rem; }
+            .article-title { font-size: 1.6rem; margin-bottom: 1rem; }
+            .section-title { margin-bottom: 1rem; padding-bottom: 0.5rem; }
         }
     </style>
 </head>
