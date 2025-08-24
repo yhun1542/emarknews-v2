@@ -171,9 +171,6 @@ app.get('/admin/scheduler-status', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   }
-});ssage: error.message
-    });
-  }
 });
 
 // Admin endpoint for single section ratings refresh

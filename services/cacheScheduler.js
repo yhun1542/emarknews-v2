@@ -7,7 +7,10 @@ class CacheScheduler {
         this.io = io; // WebSocket 서버 인스턴스
         this.isRunning = false;
         this.jobs = {};
-    }if (this.isRunning) {
+    }
+    
+    start() {
+        if (this.isRunning) {
             console.log('Cache scheduler is already running');
             return;
         }

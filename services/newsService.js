@@ -1390,6 +1390,57 @@ class NewsService {
   }
 
   /**
+   * 개별 기사들을 Redis에 캐싱하는 메서드 (성능 최적화)
+   */
+  async cacheIndividualArticles(articles, section) {
+    if (!articles || !Array.isArray(articles)) return;
+    
+    try {
+      if (redis) {
+        const pipeline = redis.pipeline();
+        
+        articles.forEach(article => {
+          if (article && article.id) {
+            const key = `article:${section}:${article.id}:${RATING_SERVICE_VERSION}`;
+            pipeline.setex(key, FAST.TTL_FULL, JSON.stringify(article));
+          }
+        });
+        
+        await pipeline.exec();
+        this.logger.info(`[${section}] Cached ${articles.length} individual articles to Redis`);
+      }
+    } catch (error) {
+      this.logger.warn(`[${section}] Failed to cache individual articles:`, error.message);
+    }
+  }
+
+  /**
+   * 개별 기사를 빠르게 조회하는 메서드 (Redis 직접 접근)
+   */
+  async getArticleFast(section, articleId) {
+    try {
+      const key = `article:${section}:${articleId}:${RATING_SERVICE_VERSION}`;
+      
+      if (redis) {
+        const cached = await redis.get(key);
+        if (cached) {
+          this.logger.info(`[Detail] Fast cache hit for article: ${articleId}`);
+          return JSON.parse(cached);
+        }
+      }
+      
+      // 캐시 미스 시 기존 방식으로 백업
+      this.logger.info(`[Detail] Fast cache miss, falling back to full search for: ${articleId}`);
+      const result = await this.getArticleById(section, articleId);
+      return result.success ? result.data : null;
+      
+    } catch (error) {
+      this.logger.warn(`[Detail] Fast article lookup failed:`, error.message);
+      return null;
+    }
+  }
+
+  /**
    * ID를 기반으로 캐시에서 단일 기사를 찾습니다.
    * @param {string} section - 기사 섹션
    * @param {string} articleId - 찾을 기사의 ID
