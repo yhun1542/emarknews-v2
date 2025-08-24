@@ -1,13 +1,15 @@
 // 자동 캐시 갱신 스케줄러
 const cron = require('node-cron');
+const NewsServiceCronOnly = require('./newsService_cron_only');
 
 class CacheScheduler {
-    constructor(newsService, io = null) {
-        this.newsService = newsService;
-        this.io = io; // WebSocket 서버 인스턴스
-        this.isRunning = false;
-        this.jobs = {};
-    }
+  constructor(newsService, io = null) {
+    this.newsService = newsService;
+    this.cronService = new NewsServiceCronOnly(newsService); // 크론 전용 서비스
+    this.io = io; // WebSocket for real-time updates
+    this.isRunning = false;
+    this.logger = newsService.logger;
+  }
     
     start() {
         if (this.isRunning) {
@@ -22,7 +24,7 @@ class CacheScheduler {
         this.worldRefreshJob = cron.schedule('*/3 * * * *', async () => {
             try {
                 console.log('🔄 Auto-refreshing world cache...');
-                await this.newsService.getSectionFast('world');
+                await this.cronService.collectAndCacheNews('world');
                 console.log('✅ World cache refreshed successfully');
                 
                 // WebSocket으로 클라이언트에 알림
@@ -42,7 +44,7 @@ class CacheScheduler {
         this.techRefreshJob = cron.schedule('*/5 * * * *', async () => {
             try {
                 console.log('🔄 Auto-refreshing tech cache...');
-                await this.newsService.getSectionFast('tech');
+                await this.cronService.collectAndCacheNews('tech');
                 console.log('✅ Tech cache refreshed successfully');
                 
                 // WebSocket으로 클라이언트에 알림
@@ -62,7 +64,7 @@ class CacheScheduler {
         this.businessRefreshJob = cron.schedule('*/10 * * * *', async () => {
             try {
                 console.log('🔄 Auto-refreshing business cache...');
-                await this.newsService.getSectionFast('business');
+                await this.cronService.collectAndCacheNews('business');
                 console.log('✅ Business cache refreshed successfully');
                 
                 // WebSocket으로 클라이언트에 알림
@@ -82,7 +84,7 @@ class CacheScheduler {
         this.buzzRefreshJob = cron.schedule('*/15 * * * *', async () => {
             try {
                 console.log('🔄 Auto-refreshing buzz cache...');
-                await this.newsService.getSectionFast('buzz');
+                await this.cronService.collectAndCacheNews('buzz');
                 console.log('✅ Buzz cache refreshed successfully');
                 
                 // WebSocket으로 클라이언트에 알림
@@ -103,8 +105,8 @@ class CacheScheduler {
             try {
                 console.log('🔄 Auto-refreshing Korea and Japan cache...');
                 await Promise.all([
-                    this.newsService.getSectionFast('kr'),
-                    this.newsService.getSectionFast('japan')
+                    this.cronService.collectAndCacheNews('kr'),
+                    this.cronService.collectAndCacheNews('japan')
                 ]);
                 console.log('✅ Korea and Japan cache refreshed successfully');
                 
