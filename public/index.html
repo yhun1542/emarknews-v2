@@ -8,7 +8,6 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* CSS 스타일은 제공해주신 원본과 동일하게 유지했습니다. */
         :root {
             --primary-color: #5a4fcf; --primary-light: #7c73e6; --primary-dark: #4338ca;
             --background-color: #f0f2f5; --surface-color: #ffffff; --text-color: #1e293b;
@@ -179,7 +178,7 @@
                 const url = `${this.API_BASE_URL}/api/${section}/full`;
 
                 try {
-                    // 브라우저 캐시는 사용하지 않지만, 서버의 Redis 캐시를 통해 빠른 응답을 받습니다.
+                    // 서버의 최신 캐시를 받기 위해 no-store 옵션 사용
                     const response = await fetch(url, { cache: 'no-store' });
                     
                     if (!response.ok) {
@@ -222,7 +221,7 @@
                     : [article.description || '요약 정보가 없습니다.'];
                 
                 const tagsHtml = (article.tags || [])
-                    .map(tag => `<span class="tag ${this.getTagClass(tag)}">${tag}</span>`)
+                    .map(tag => `<span class="tag ${this.getTagClass(tag)}">${this.escapeHtml(tag)}</span>`)
                     .join('');
                 
                 const summaryHtml = summaryPoints
@@ -267,4 +266,63 @@
             openDetailPage(articleId, section) {
                 const article = this.articles.find(a => a.id === articleId);
                 if (!article) {
-                    alert('기
+                    alert('기사를 찾을 수 없습니다.');
+                    return;
+                }
+                sessionStorage.setItem(`article_${section}_${articleId}`, JSON.stringify(article));
+                sessionStorage.setItem('isOpenedByScript', 'true');
+                window.open(`/detail.html?section=${section}&id=${articleId}`, '_blank');
+            }
+
+            setupWebSocket() {
+                try {
+                    const socket = io();
+
+                    socket.on('connect', () => console.log('✅ WebSocket connected'));
+                    socket.on('disconnect', () => console.log('❌ WebSocket disconnected'));
+
+                    socket.on('cache-updated', (data) => {
+                        console.log(`📰 Cache update notification received for section: ${data.section}`);
+                        if (this.currentSection === data.section) {
+                            this.showUpdateNotification(data.message);
+                            setTimeout(() => this.loadNews(this.currentSection, true), 1000);
+                        }
+                    });
+                } catch (e) {
+                    console.warn('WebSocket connection failed. Real-time updates disabled.', e);
+                }
+            }
+            
+            showUpdateNotification(message) {
+                let notification = document.querySelector('.update-notification');
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.className = 'update-notification';
+                    document.body.appendChild(notification);
+                }
+                notification.innerHTML = `<span>🔄</span> <span>${message}</span>`;
+                
+                setTimeout(() => notification.classList.add('show'), 10);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            // --- 유틸리티 함수들 ---
+            getTagClass(tag) { const map = { '긴급': 'urgent', '중요': 'important', 'Hot': 'hot', 'Buzz': 'buzz' }; return map[tag] || 'default'; }
+            formatPublishDate(d) { if (!d) return ''; const dt = new Date(d); return `${dt.getFullYear()}.${String(dt.getMonth() + 1).padStart(2, '0')}.${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`; }
+            getTimeAgo(d) { if (!d) return ''; const diff = (new Date() - new Date(d)) / 60000; if (diff < 1) return '방금 전'; if (diff < 60) return `${Math.floor(diff)}분 전`; if (diff < 1440) return `${Math.floor(diff / 60)}시간 전`; return `${Math.floor(diff / 1440)}일 전`; }
+            escapeHtml(s) { if(typeof s !=='string') return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+            truncateSource(s) { return (s && s.length > 20) ? s.substring(0, 18) + '...' : s; }
+            scrollToTop() { const t = this.isMobileView ? this.newsGrid : window; t.scrollTo({ top: 0, behavior: 'smooth' }); }
+            showLoading() { document.getElementById('loading').style.display = 'block'; document.getElementById('news-grid').style.display = 'none'; document.getElementById('error').style.display = 'none'; }
+            hideLoading() { document.getElementById('loading').style.display = 'none'; }
+            showError(m) { document.getElementById('loading').style.display = 'none'; document.getElementById('news-grid').style.display = 'none'; const e = document.getElementById('error'); e.style.display = 'block'; document.getElementById('error-text').textContent = m; }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.newsApp = new EmarkNews();
+        });
+    </script>
+</body>
+</html>
