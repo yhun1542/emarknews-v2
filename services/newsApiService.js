@@ -4,8 +4,12 @@ const googleNews = require('google-news-scraper');
 
 class NewsApiService {
     constructor() {
-        // NewsAPI 초기화 (환경변수에서 API 키 가져오기)
-        this.newsapi = process.env.NEWS_API_KEY ? new NewsAPI(process.env.NEWS_API_KEY) : null;
+        // NewsAPI 초기화 (API 키 직접 설정)
+        const newsApiKey = process.env.NEWS_API_KEY || '44d9347a149b40ad87b3deb8bba95183';
+        this.newsapi = newsApiKey ? new NewsAPI(newsApiKey) : null;
+        
+        // GNews API 키 설정
+        this.gnewsApiKey = process.env.GNEWS_API_KEY || '419c98f65957bb2389c3912af1aece04';
         
         // 한국 관련 키워드
         this.koreaKeywords = [

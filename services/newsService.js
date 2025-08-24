@@ -7,7 +7,8 @@ const axios = require('axios');
 const Parser = require('rss-parser');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
-const AIService = require('./aiService'); // AI 서비스 import
+const AIService = require('./aiService');
+const NewsApiService = require('./newsApiService'); // AI 서비스 import
 const ratingService = require('./ratingService'); // Rating 서비스 싱글톤 import
 
 // 🔧 캐시 버전 관리: ratingService 변경 시 이 버전을 업데이트하면 자동으로 새 캐시 사용
@@ -254,6 +255,7 @@ class NewsService {
     this.logger = opts.logger || logger;
     this.API_TIMEOUT = 5000;
     this.aiService = new AIService();
+    this.newsApiService = new NewsApiService(); // NewsAPI 서비스 초기화
     // ratingService는 싱글톤으로 직접 사용
 
     // [LOG] 서비스 시작 시 환경 변수 로드 상태를 명확히 확인합니다.
@@ -1111,6 +1113,16 @@ class NewsService {
     const maxRetries = 3;
     const baseDelay = 1000; // 1초
     
+    // NewsAPI 프로토콜 처리
+    if (url.startsWith('newsapi://')) {
+      return await this.fetchFromNewsAPIProtocol(url);
+    }
+    
+    // Google News 프로토콜 처리
+    if (url.startsWith('google-news://')) {
+      return await this.fetchFromGoogleNewsProtocol(url);
+    }
+    
     try {
       // 캐시된 ETag/Last-Modified 확인
       const cacheKey = `rss_${sha1(url)}`;
@@ -1655,6 +1667,65 @@ class NewsService {
     }
     
     return results;
+  }
+
+  // NewsAPI 프로토콜 처리 메서드
+  async fetchFromNewsAPIProtocol(url) {
+    try {
+      const section = url.replace('newsapi://', '');
+      this.logger.info(`[NewsAPI Protocol] Fetching ${section} news...`);
+      
+      switch (section) {
+        case 'world':
+          return await this.newsApiService.getWorldNews();
+        case 'tech':
+          return await this.newsApiService.getTechNews();
+        case 'business':
+          return await this.newsApiService.getBusinessNews();
+        case 'buzz':
+          return await this.newsApiService.getBuzzNews();
+        case 'kr':
+          return await this.newsApiService.getKoreaNews();
+        case 'japan':
+          return await this.newsApiService.getJapanNews();
+        default:
+          this.logger.warn(`[NewsAPI Protocol] Unknown section: ${section}`);
+          return [];
+      }
+    } catch (error) {
+      this.logger.error(`[NewsAPI Protocol] Error fetching ${url}:`, error.message);
+      return [];
+    }
+  }
+
+  // Google News 프로토콜 처리 메서드
+  async fetchFromGoogleNewsProtocol(url) {
+    try {
+      const section = url.replace('google-news://', '');
+      this.logger.info(`[Google News Protocol] Fetching ${section} news...`);
+      
+      // Google News 스크래핑은 newsApiService에서 처리
+      switch (section) {
+        case 'world':
+          return await this.newsApiService.getWorldNews();
+        case 'tech':
+          return await this.newsApiService.getTechNews();
+        case 'business':
+          return await this.newsApiService.getBusinessNews();
+        case 'buzz':
+          return await this.newsApiService.getBuzzNews();
+        case 'kr':
+          return await this.newsApiService.getKoreaNews();
+        case 'japan':
+          return await this.newsApiService.getJapanNews();
+        default:
+          this.logger.warn(`[Google News Protocol] Unknown section: ${section}`);
+          return [];
+      }
+    } catch (error) {
+      this.logger.error(`[Google News Protocol] Error fetching ${url}:`, error.message);
+      return [];
+    }
   }
 }
 
