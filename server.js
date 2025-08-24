@@ -366,6 +366,20 @@ app.get('/api/:section/fast', async (req, res) => {
   }
 });
 
+// AI 기능이 포함된 완전한 데이터를 제공하는 엔드포인트
+app.get('/api/:section/full', async (req, res) => {
+  try {
+    const { section } = req.params;
+    // 이미 만들어둔 getSectionFull 함수를 그대로 사용합니다.
+    const data = await newsService.getSectionFull(section);
+    res.json(data);
+  } catch (error) {
+    // 에러 로깅을 추가하여 문제를 쉽게 파악할 수 있도록 합니다.
+    logger.error(`API Error on /api/${req.params.section}/full:`, error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // AI API Test endpoints (GET for testing)
 app.get('/api/translate', (req, res) => {
   res.json({
