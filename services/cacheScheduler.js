@@ -29,6 +29,7 @@ class CacheScheduler {
                 
                 // WebSocket으로 클라이언트에 알림
                 if (this.io) {
+                    console.log(`📡 Sending WebSocket event for section: world`);
                     this.io.emit('cache-updated', {
                         section: 'world',
                         message: 'World news updated',
@@ -49,6 +50,7 @@ class CacheScheduler {
                 
                 // WebSocket으로 클라이언트에 알림
                 if (this.io) {
+                    console.log(`📡 Sending WebSocket event for section: tech`);
                     this.io.emit('cache-updated', {
                         section: 'tech',
                         message: 'Tech news updated',
@@ -69,6 +71,7 @@ class CacheScheduler {
                 
                 // WebSocket으로 클라이언트에 알림
                 if (this.io) {
+                    console.log(`📡 Sending WebSocket event for section: business`);
                     this.io.emit('cache-updated', {
                         section: 'business',
                         message: 'Business news updated',
@@ -89,6 +92,7 @@ class CacheScheduler {
                 
                 // WebSocket으로 클라이언트에 알림
                 if (this.io) {
+                    console.log(`📡 Sending WebSocket event for section: buzz`);
                     this.io.emit('cache-updated', {
                         section: 'buzz',
                         message: 'Buzz news updated',
@@ -112,11 +116,13 @@ class CacheScheduler {
                 
                 // WebSocket으로 클라이언트에 알림
                 if (this.io) {
+                    console.log(`📡 Sending WebSocket event for section: kr`);
                     this.io.emit('cache-updated', {
                         section: 'kr',
                         message: 'Korea news updated',
                         timestamp: new Date().toISOString()
                     });
+                    console.log(`📡 Sending WebSocket event for section: japan`);
                     this.io.emit('cache-updated', {
                         section: 'japan',
                         message: 'Japan news updated',
