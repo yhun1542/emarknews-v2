@@ -8,10 +8,10 @@ const Parser = require('rss-parser');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
 const AIService = require('./aiService'); // AI 서비스 import
-const RatingService = require('./ratingService'); // Rating 서비스 import
+const ratingService = require('./ratingService'); // Rating 서비스 싱글톤 import
 
 // 🔧 캐시 버전 관리: ratingService 변경 시 이 버전을 업데이트하면 자동으로 새 캐시 사용
-const RATING_SERVICE_VERSION = "v2.2"; // 기본 점수 변경으로 버전 업데이트
+const RATING_SERVICE_VERSION = "v3.0"; // 고급 RatingService 적용으로 메이저 버전 업데이트
 
 // Redis 클라이언트
 let redis;
@@ -254,7 +254,7 @@ class NewsService {
     this.logger = opts.logger || logger;
     this.API_TIMEOUT = 5000;
     this.aiService = new AIService();
-    this.ratingService = new RatingService(); // Rating 서비스 인스턴스 추가
+    // ratingService는 싱글톤으로 직접 사용
 
     // [LOG] 서비스 시작 시 환경 변수 로드 상태를 명확히 확인합니다.
     this.logger.info('--- Initializing NewsService: Checking Environment Variables ---');
@@ -1358,7 +1358,7 @@ class NewsService {
       const score = (w.f * f_score) + (w.v * v_score) + (w.e * e_score) + (w.s * s_score);
       
       // ratingService를 사용한 고급 평점 계산
-      let rating = await this.ratingService.calculateRating(it);
+      let rating = await ratingService.calculateRating(it, section);
       
       // 🔥 읽은 기사 페널티: 읽은 기사는 평점에서 2점 차감하여 뒤로 보냄
       const isRead = readArticles.includes(it.id);
@@ -1572,7 +1572,7 @@ class NewsService {
         const reRatedArticles = await Promise.all(
             existingData.data.map(async (article) => {
                 try {
-                    const newRating = await this.ratingService.calculateRating(article);
+                    const newRating = await ratingService.calculateRating(article, section);
                     return {
                         ...article,
                         rating: newRating.toFixed(1),
