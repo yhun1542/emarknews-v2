@@ -12,6 +12,8 @@ const rateLimit = require('express-rate-limit');
 const logger = require('./utils/logger');
 const NewsService = require('./services/newsService');
 const AIService = require('./services/aiService');
+const CacheScheduler = require('./services/cacheScheduler');
+const RSSMonitor = require('./services/rssMonitor');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -23,6 +25,8 @@ app.set('trust proxy', true); // Railway 프록시 환경에서 X-Forwarded-For 
 // Initialize services
 const newsService = new NewsService();
 const aiService = new AIService();
+const cacheScheduler = new CacheScheduler(newsService);
+const rssMonitor = new RSSMonitor();
 
 // Admin endpoint for cache clearing
 app.get('/admin/clear-cache', async (req, res) => {
@@ -88,13 +92,77 @@ app.get('/admin/refresh-ratings-only', async (req, res) => {
       sections: results
     };
     
-    res.status(200).json(summary);
+    res.json(summary);
   } catch (error) {
-    logger.error('Ratings-only refresh failed:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to refresh ratings',
-      message: error.message
+      message: 'Failed to refresh ratings: ' + error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Admin endpoint for RSS monitoring status
+app.get('/admin/rss-status', async (req, res) => {
+  try {
+    const healthSummary = rssMonitor.getHealthSummary();
+    const brokenFeeds = rssMonitor.getBrokenFeeds();
+    const workingFeeds = rssMonitor.getWorkingFeeds();
+    
+    res.json({
+      success: true,
+      health: healthSummary,
+      brokenFeeds: brokenFeeds,
+      workingFeeds: workingFeeds,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get RSS status: ' + error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Admin endpoint for manual RSS check
+app.get('/admin/check-rss', async (req, res) => {
+  try {
+    const results = await rssMonitor.checkAllFeeds();
+    
+    res.json({
+      success: true,
+      message: 'RSS feeds checked successfully',
+      results: results,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check RSS feeds: ' + error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Admin endpoint for cache scheduler status
+app.get('/admin/scheduler-status', async (req, res) => {
+  try {
+    const status = cacheScheduler.getStatus();
+    
+    res.json({
+      success: true,
+      scheduler: status,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get scheduler status: ' + error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});ssage: error.message
     });
   }
 });
@@ -616,5 +684,13 @@ app.listen(PORT, '0.0.0.0', () => {
   logger.info(`EmarkNews server running on port ${PORT}`, { service: 'emarknews' });
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`, { service: 'emarknews' });
   logger.info(`Health check: http://localhost:${PORT}/health`, { service: 'emarknews' });
+  
+  // 자동 캐시 갱신 스케줄러 시작
+  cacheScheduler.start();
+  
+  // RSS 피드 모니터링 시작
+  rssMonitor.startAutoCheck();
+  
+  logger.info('🚀 Cache scheduler and RSS monitor started', { service: 'emarknews' });
 });
 
