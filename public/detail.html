@@ -131,6 +131,10 @@
             gap: 0.3rem;
         }
 
+        .rating-star {
+            color: #FFD700;
+        }
+
         .article-image {
             width: 100%;
             max-height: 400px;
@@ -305,7 +309,7 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="action-button close-button" onclick="closeWindow()">← 닫기</button>
+            <button class="action-button close-button" onclick="window.close()">닫기</button>
         </div>
     </div>
 
@@ -420,7 +424,7 @@
                         </div>
                         <div class="meta-right">
                             <div class="rating">
-                                <span style="color: #FFD700;">⭐</span>${article.rating || '0.0'}
+                                <span class="rating-star">⭐</span>${article.rating || '0.0'}
                             </div>
                         </div>
                     </div>
