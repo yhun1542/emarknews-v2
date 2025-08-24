@@ -1,5 +1,5 @@
 // server.js - EmarkNews Main Server
-// EmarkNews v2 Server - Force Redeploy 2025-08-22 23:20
+// EmarkNews v2 Server - AI Prompt Fix Deploy 2025-08-24 08:53
 require('dotenv').config();
 // Force deploy trigger - Cache cleared and ready for deployment
 const express = require('express');
