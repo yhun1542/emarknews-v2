@@ -174,11 +174,10 @@
                     this.showLoading();
                 }
 
-                // AI 기능이 포함된 '/full' 엔드포인트를 호출하여 항상 완전한 데이터를 받습니다.
-                const url = `${this.API_BASE_URL}/api/${section}/full`;
+                // [수정 1] 항상 빠른 응답을 보장하는 /fast 엔드포인트를 다시 사용합니다.
+                const url = `${this.API_BASE_URL}/api/${section}/fast`;
 
                 try {
-                    // 서버의 최신 캐시를 받기 위해 no-store 옵션 사용
                     const response = await fetch(url, { cache: 'no-store' });
                     
                     if (!response.ok) {
@@ -190,6 +189,19 @@
                     if (data.success && Array.isArray(data.data)) {
                         this.articles = data.data;
                         this.displayNews(this.articles);
+
+                        // [수정 2] 만약 지금 받은 데이터가 '부분 데이터(partial)'라면,
+                        // 10초 후에 완전한 데이터를 다시 요청하는 타이머를 설정합니다.
+                        if (data.partial) {
+                            console.log('Partial data received. Scheduling a refresh in 10 seconds...');
+                            setTimeout(() => {
+                                // isUpdate 플래그를 true로 설정하여 로딩 화면 없이 조용히 업데이트합니다.
+                                this.loadNews(section, true);
+                            }, 10000); // 10초
+                        } else {
+                            console.log('Full data received. No refresh scheduled.');
+                        }
+
                     } else {
                         throw new Error(data.message || '데이터 형식이 올바르지 않습니다.');
                     }
@@ -198,7 +210,9 @@
                     const errorMessage = error.message.includes('Failed to fetch') 
                         ? '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.' 
                         : error.message;
-                    this.showError(errorMessage);
+                    if (!isUpdate) { // 자동 업데이트 실패 시에는 에러 메시지를 띄우지 않음
+                        this.showError(errorMessage);
+                    }
                 }
             }
 
