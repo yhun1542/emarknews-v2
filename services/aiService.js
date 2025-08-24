@@ -224,7 +224,8 @@ ${article}
 
   // 기존 API 호환성을 위한 래퍼 메서드들
   async summarize(text, options = {}) {
-    const cacheKey = `summary:${Buffer.from(text).toString('base64').substring(0, 32)}`;
+    const isDetailed = options.detailed || false;
+    const cacheKey = `summary:${isDetailed ? 'detailed:' : 'simple:'}${Buffer.from(text).toString('base64').substring(0, 32)}`;
     
     try {
       const cached = await this.cache.get(cacheKey);
@@ -233,7 +234,7 @@ ${article}
       }
 
       const summary = await this.queueTask(() => 
-        this.summarizeArticleStreaming(text, { detailed: options.detailed || false })
+        this.summarizeArticleStreaming(text, { detailed: isDetailed })
       );
 
       // 캐시 저장 (1시간)
