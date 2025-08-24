@@ -34,19 +34,19 @@ class RatingService {
       let score = 2.5; // Base score 3.0 → 2.5로 변경
       const text = `${article.title} ${article.description || ''}`.toLowerCase();
 
-      // Check for urgent keywords (+2.0)
+      // Check for urgent keywords (+0.5) - 대폭 축소
       if (this.containsKeywords(text, this.keywords.urgent)) {
-        score += 2.0;
-      }
-
-      // Check for important keywords (+1.0)
-      if (this.containsKeywords(text, this.keywords.important)) {
-        score += 1.0;
-      }
-
-      // Check for buzz/hot keywords (+0.5)
-      if (this.containsKeywords(text, [...this.keywords.buzz, ...this.keywords.hot])) {
         score += 0.5;
+      }
+
+      // Check for important keywords (+0.3) - 대폭 축소
+      if (this.containsKeywords(text, this.keywords.important)) {
+        score += 0.3;
+      }
+
+      // Check for buzz/hot keywords (+0.2) - 축소
+      if (this.containsKeywords(text, [...this.keywords.buzz, ...this.keywords.hot])) {
+        score += 0.2;
       }
 
       // Recency bonus
@@ -55,11 +55,11 @@ class RatingService {
       const hoursAgo = (now - publishedDate) / (1000 * 60 * 60);
 
       if (hoursAgo < 1) {
-        score += 1.0; // Very recent
+        score += 0.3; // Very recent - 대폭 축소 (1.0 → 0.3)
       } else if (hoursAgo < 6) {
-        score += 0.5; // Recent
+        score += 0.2; // Recent - 축소 (0.5 → 0.2)
       } else if (hoursAgo < 24) {
-        score += 0.2; // Today
+        score += 0.1; // Today - 축소 (0.2 → 0.1)
       }
 
       // Source reliability bonus
@@ -73,7 +73,7 @@ class RatingService {
       if (reliableSources.some(source => 
         (article.source || '').toLowerCase().includes(source.toLowerCase())
       )) {
-        score += 0.5;
+        score += 0.2; // 신뢰성 보너스 축소 (0.5 → 0.2)
       }
 
       // Content quality (has description and content)
