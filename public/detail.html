@@ -119,16 +119,16 @@
         }
 
         .rating {
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            background: var(--primary-dark);
             color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            padding: 0.3rem 0.7rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
             display: flex;
             align-items: center;
-            gap: 2px;
+            gap: 0.3rem;
         }
 
         .article-image {
@@ -305,11 +305,32 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="action-button close-button" onclick="window.close()">닫기</button>
+            <button class="action-button close-button" onclick="closeWindow()">← 닫기</button>
         </div>
     </div>
 
     <script>
+
+        function closeWindow() {
+            try {
+                // 1. 브라우저 뒤로가기 시도
+                if (window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+                
+                // 2. 새 창 닫기 시도
+                window.close();
+                
+                // 3. 닫기가 안되면 홈페이지로 이동
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 100);
+            } catch (error) {
+                console.error('닫기 오류:', error);
+                window.location.href = '/';
+            }
+        }
 
         function formatDateTime(dateString) {
             try {
@@ -398,7 +419,9 @@
                             <span class="publish-time">${formatDateTime(article.publishedAt)}</span>
                         </div>
                         <div class="meta-right">
-                            <div class="rating">⭐${article.rating || '0.0'}</div>
+                            <div class="rating">
+                                <span style="color: #FFD700;">⭐</span>${article.rating || '0.0'}
+                            </div>
                         </div>
                     </div>
                     
