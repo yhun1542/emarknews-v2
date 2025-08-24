@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기사 상세보기 - EmarkNews</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        :root {
+            --primary-color: #5a4fcf;
+            --primary-light: #7c73e6;
+            --primary-dark: #4338ca;
+            --background-color: #f0f2f5;
+            --surface-color: #ffffff;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
+            --text-content: #334155;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: var(--background-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: var(--surface-color);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .top-nav {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .back-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .back-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .article-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            color: var(--text-color);
+        }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .meta-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .meta-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .source {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .publish-time {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .rating {
+            background: var(--primary-dark);
+            color: white;
+            padding: 0.3rem 0.7rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .rating-star {
+            color: #FFD700;
+        }
+
+        .article-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .content {
+            background: var(--surface-color);
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            font-size: 1.1rem;
+        }
+
+        .summary-point {
+            margin-bottom: 16px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 0 8px 8px 0;
+            line-height: 1.7;
+            color: var(--text-content);
+            font-size: 1rem;
+        }
+
+        .summary-point:last-child {
+            margin-bottom: 0;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc2626;
+            font-size: 1.1rem;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .bottom-nav {
+            display: flex;
+            justify-content: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .action-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
+            display: block;
+            margin: 0 auto;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .action-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+            
+            .container {
+                max-width: 100%;
+                margin: 0;
+            }
+            
+            .header {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .article-title {
+                font-size: 1.5rem;
+            }
+            
+            .bottom-nav {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .action-button {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            .tab-content {
+                padding: 16px;
+            }
+            
+            .summary-content, .translation-text {
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="top-nav">
+                <a href="/" class="logo">EmarkNews.com</a>
+            </div>
+            
+            <div id="article-content">
+                <div class="loading">기사를 불러오는 중입니다...</div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <button class="action-button close-button" onclick="closeTab()">창 닫기</button>
+        </div>
+    </div>
+
+    <script>
+
+        function closeTab() {
+            // 방법 1: 브라우저 히스토리 조작으로 뒤로가기
+            if (document.referrer && document.referrer !== window.location.href) {
+                window.history.back();
+                return;
+            }
+            
+            // 방법 2: 창 닫기 시도
+            try {
+                window.close();
+                // 창이 닫히지 않으면 다음 단계로
+                setTimeout(() => {
+                    // 방법 3: 홈페이지로 이동
+                    window.location.href = '/';
+                }, 100);
+            } catch (e) {
+                // 방법 4: 직접 홈페이지로 이동
+                window.location.href = '/';
+            }
+        }
+
+        function formatDateTime(dateString) {
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '시간 정보 없음';
+                
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}.${month}.${day} ${hours}:${minutes}`;
+            } catch (error) {
+                return '시간 정보 없음';
+            }
+        }
+
+        function cleanSummaryPoint(point) {
+            // 맨 앞의 점(.) 제거
+            return point.replace(/^\.\s*/, '').trim();
+        }
+
+        async function loadArticle() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+            const id = urlParams.get('id');
+
+            if (!section || !id) {
+                document.getElementById('article-content').innerHTML = 
+                    '<div class="error">잘못된 접근입니다.</div>';
+                return;
+            }
+
+            try {
+                // 빠른 API 먼저 시도, 실패 시 기존 API 사용
+                let apiUrl = `/api/article/${section}/${id}/fast`;
+                console.log('Fetching from Fast API:', apiUrl);
+                
+                let response = await fetch(apiUrl);
+                
+                // 빠른 API 실패 시 기존 API로 백업
+                if (!response.ok) {
+                    console.log('Fast API failed, trying original API...');
+                    apiUrl = `/api/article/${section}/${id}`;
+                    response = await fetch(apiUrl);
+                }
+                
+                if (!response.ok) {
+                    throw new Error('기사를 찾을 수 없습니다.');
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result);
+                
+                if (!result.success || !result.data) {
+                    throw new Error('기사 데이터가 없습니다.');
+                }
+
+                const article = result.data;
+                
+                // 상세 요약 생성 (핵심 요약과 다르게)
+                let detailedSummary = '';
+                if (article.summaryPoints && article.summaryPoints.length > 0) {
+                    detailedSummary = article.summaryPoints
+                        .map(point => `<div class="summary-point">${cleanSummaryPoint(point)}</div>`)
+                        .join('');
+                } else if (article.descriptionKo) {
+                    detailedSummary = `<div class="summary-point">${article.descriptionKo}</div>`;
+                } else {
+                    detailedSummary = '<div class="summary-point">상세 요약 정보가 없습니다.</div>';
+                }
+
+                // 이미지 HTML 생성
+                let imageHtml = '';
+                if (article.imageUrl) {
+                    imageHtml = `<img src="${article.imageUrl}" alt="기사 이미지" class="article-image" onerror="this.style.display='none'">`;
+                }
+
+                const html = `
+                    <h1 class="article-title">${article.titleKo || article.title || '제목 없음'}</h1>
+                    
+                    <div class="article-meta">
+                        <div class="meta-left">
+                            <span class="source">${article.source || '출처 없음'}</span>
+                            <span class="publish-time">${formatDateTime(article.publishedAt)}</span>
+                        </div>
+                        <div class="meta-right">
+                            <div class="rating">
+                                <span class="rating-star">⭐</span>${article.rating || '0.0'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${imageHtml}
+                `;
+
+                const contentHtml = `
+                    <div class="content">
+                        <h2 class="section-title">
+                            <span class="section-icon">✨</span>
+                            AI 상세 요약
+                        </h2>
+                        ${detailedSummary}
+                        
+                        <div class="actions">
+                            ${article.url ? `<a href="${article.url}" target="_blank" class="action-button">🔗 원문 보기</a>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('article-content').innerHTML = html + contentHtml;
+                
+                // 페이지 제목 업데이트
+                document.title = `${article.titleKo || article.title || '기사 상세보기'} - EmarkNews`;
+
+            } catch (error) {
+                console.error('Error loading article:', error);
+                document.getElementById('article-content').innerHTML = 
+                    `<div class="error">기사를 불러오는 중 오류가 발생했습니다: ${error.message}</div>`;
+            }
+        }
+
+        // 페이지가 로드되면 실행되는 메인 로직
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const articleId = urlParams.get('id');
+            const section = urlParams.get('section');
+
+            if (!articleId || !section) {
+                showError('기사 정보를 URL에서 찾을 수 없습니다.');
+                return;
+            }
+
+            // [수정] 닫기 버튼의 동작을 결정하는 로직 추가
+            const isOpenedByScript = sessionStorage.getItem('isOpenedByScript');
+
+            if (isOpenedByScript === 'true') {
+                // 메인 페이지가 남긴 표식을 확인했으므로, 이제 지워줍니다. (새로고침 시 오작동 방지)
+                sessionStorage.removeItem('isOpenedByScript');
+                
+                // 모든 '닫기' 버튼의 기능을 window.close로 변경합니다.
+                document.querySelectorAll('.close-button').forEach(button => {
+                    button.textContent = '창 닫기';
+                    button.onclick = () => window.close();
+                });
+            } else {
+                // 표식이 없으면 (직접 접속 등), '목록으로' 돌아가는 기능으로 설정합니다.
+                document.querySelectorAll('.close-button').forEach(button => {
+                    button.textContent = '목록으로';
+                    button.onclick = () => window.location.href = '/';
+                });
+            }
+
+            // 기사 데이터를 불러오고 렌더링
+            await loadArticle();
+        });
+    </script>
+</body>
+</html>
+

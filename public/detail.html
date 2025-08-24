@@ -5,498 +5,188 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>기사 상세보기 - EmarkNews</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <style>
         :root {
-            --primary-color: #5a4fcf;
-            --primary-light: #7c73e6;
-            --primary-dark: #4338ca;
-            --background-color: #f0f2f5;
-            --surface-color: #ffffff;
-            --text-color: #1e293b;
-            --text-secondary: #64748b;
-            --text-content: #334155;
-            --border-color: #e2e8f0;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
+            --primary-color: #5a4fcf; --primary-light: #7c73e6; --primary-dark: #4338ca;
+            --background-color: #f0f2f5; --surface-color: #ffffff; --text-color: #1e293b;
+            --text-secondary: #64748b; --text-content: #334155; --border-color: #e2e8f0;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Pretendard', sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background: var(--background-color);
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: var(--surface-color);
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-            border: 1px solid var(--border-color);
-        }
-
-        .top-nav {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .logo {
-            color: var(--primary-color);
-            font-size: 1.3rem;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--background-color); color: var(--text-color); line-height: 1.6; }
+        .container { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        .header { background: var(--surface-color); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 2rem; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .logo { color: var(--primary-color); font-size: 1.5rem; font-weight: 800; text-decoration: none; }
         .back-button {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 600;
+            background: var(--background-color); color: var(--text-secondary); border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
             transition: all 0.2s ease;
         }
-
-        .back-button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .article-title {
-            font-size: 1.9rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            line-height: 1.4;
-            color: var(--text-color);
-        }
-
-        .article-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 20px;
-            border-top: 2px solid var(--border-color);
-        }
-
-        .meta-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-        }
-
-        .meta-right {
-            display: flex;
-            align-items: center;
-        }
-
-        .source {
-            color: var(--primary-color);
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .publish-time {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        .rating {
-            background: var(--primary-dark);
-            color: white;
-            padding: 0.3rem 0.7rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .rating-star {
-            color: #FFD700;
-        }
-
-        .article-image {
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            border-radius: 12px;
-            margin: 20px 0;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-        }
-
-        .content {
-            background: var(--surface-color);
-            padding: 28px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-            border: 1px solid var(--border-color);
-        }
-
-        .section-title {
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-icon {
-            font-size: 1.1rem;
-        }
-
-        .summary-point {
-            margin-bottom: 16px;
-            padding: 16px 20px;
-            background: #f8fafc;
-            border-left: 4px solid var(--primary-color);
-            border-radius: 0 8px 8px 0;
-            line-height: 1.7;
-            color: var(--text-content);
-            font-size: 1rem;
-        }
-
-        .summary-point:last-child {
-            margin-bottom: 0;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 32px;
-        }
-
+        .back-button:hover { background: var(--border-color); color: var(--text-color); }
+        .article-title { font-size: 2rem; font-weight: 800; line-height: 1.4; margin-bottom: 1.5rem; }
+        .article-meta { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 1rem; }
+        .meta-left { display: flex; align-items: center; gap: 0.75rem; color: var(--text-secondary); }
+        .source { color: var(--primary-color); font-weight: 600; }
+        .rating { background: var(--primary-dark); color: white; padding: 0.3rem 0.7rem; border-radius: 15px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.3rem; }
+        .rating-star { color: #FFD700; }
+        .content { background: var(--surface-color); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .section-title { color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.75rem; }
+        .summary-point { margin-bottom: 1rem; line-height: 1.8; color: var(--text-content); font-size: 1.05rem; display: flex; }
+        .summary-bullet { color: var(--primary-color); margin-right: 0.75rem; }
+        .actions { text-align: center; margin-top: 2rem; }
         .action-button {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
+            background: var(--primary-color); color: white; border: none; padding: 0.8rem 2rem; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center;
+            gap: 0.5rem; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(90, 79, 207, 0.2);
         }
-
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        .error {
-            text-align: center;
-            padding: 40px;
-            color: #dc2626;
-            font-size: 1.1rem;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-
-        .bottom-nav {
-            display: flex;
-            justify-content: center;
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .action-button {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
-            display: block;
-            margin: 0 auto;
-            text-align: center;
-            min-width: 120px;
-        }
-
-        .action-button:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
-        }
-
+        .action-button:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(90, 79, 207, 0.3); }
+        .loading, .error { text-align: center; padding: 3rem; font-size: 1.1rem; color: var(--text-secondary); }
+        .error { color: #dc2626; background: #fff1f2; border: 1px solid #ffdde0; border-radius: 8px; }
         @media (max-width: 768px) {
-            body {
-                padding: 8px;
-            }
-            
-            .container {
-                max-width: 100%;
-                margin: 0;
-            }
-            
-            .header {
-                padding: 16px;
-                margin-bottom: 16px;
-            }
-            
-            .article-title {
-                font-size: 1.5rem;
-            }
-            
-            .bottom-nav {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .action-button {
-                width: 100%;
-                min-width: auto;
-            }
-            
-            .tab-content {
-                padding: 16px;
-            }
-            
-            .summary-content, .translation-text {
-                padding: 0;
-                margin: 0;
-            }
+            body { padding: 0; } .container { margin: 0; max-width: 100%; }
+            .header, .content { padding: 1.5rem 1rem; border-radius: 0; margin-bottom: 0.75rem; }
+            .article-title { font-size: 1.6rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="app-container" class="container" style="display: none;">
         <div class="header">
             <div class="top-nav">
-                <a href="/" class="logo">EmarkNews.com</a>
+                <a href="/" class="logo">EmarkNews</a>
+                <button class="back-button" onclick="closeOrBack()">← 목록으로</button>
             </div>
-            
-            <div id="article-content">
-                <div class="loading">기사를 불러오는 중입니다...</div>
+            <h1 id="article-title" class="article-title"></h1>
+            <div class="article-meta">
+                <div class="meta-left">
+                    <span id="source" class="source"></span>
+                    <span id="publish-time"></span>
+                </div>
+                <div id="rating-badge" class="rating"></div>
             </div>
         </div>
         
-        <div class="bottom-nav">
-            <button class="action-button close-button" onclick="closeTab()">창 닫기</button>
+        <div class="content">
+            <h2 class="section-title">
+                <span class="section-icon">✨</span>
+                AI 상세 요약
+            </h2>
+            <div id="summary-content"></div>
+            <div class="actions">
+                <a id="original-link" href="#" target="_blank" class="action-button">🔗 원문 기사 보기</a>
+            </div>
         </div>
     </div>
 
+    <div id="loading" class="loading">불러오는 중...</div>
+    <div id="error" class="error" style="display: none;"></div>
+
     <script>
+        // 백엔드가 같은 도메인에서 서비스되므로 상대 경로 사용
+        const API_BASE_URL = '';
 
-        function closeTab() {
-            // 방법 1: 브라우저 히스토리 조작으로 뒤로가기
-            if (document.referrer && document.referrer !== window.location.href) {
-                window.history.back();
-                return;
+        function closeOrBack() {
+            // 메인 페이지에서 sessionStorage에 저장한 값이 있는지 확인
+            const isOpenedByScript = sessionStorage.getItem('isOpenedByScript');
+            if (isOpenedByScript === 'true') {
+                sessionStorage.removeItem('isOpenedByScript');
+                window.close(); // 스크립트로 열린 창이면 닫기
+            } else {
+                window.location.href = '/'; // 아니면 메인으로 이동
             }
+        }
+
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderArticle(article) {
+            document.title = `${escapeHtml(article.titleKo || article.title)} - EmarkNews`;
             
-            // 방법 2: 창 닫기 시도
-            try {
-                window.close();
-                // 창이 닫히지 않으면 다음 단계로
-                setTimeout(() => {
-                    // 방법 3: 홈페이지로 이동
-                    window.location.href = '/';
-                }, 100);
-            } catch (e) {
-                // 방법 4: 직접 홈페이지로 이동
-                window.location.href = '/';
-            }
-        }
+            document.getElementById('article-title').textContent = article.titleKo || article.title;
+            document.getElementById('source').textContent = article.source || '출처 없음';
+            document.getElementById('publish-time').textContent = new Date(article.publishedAt).toLocaleString('ko-KR');
+            document.getElementById('rating-badge').innerHTML = `<span class="rating-star">⭐</span>${(parseFloat(article.rating) || 3.0).toFixed(1)}`;
+            
+            const summaryPoints = (article.summaryPoints && article.summaryPoints.length > 0)
+                ? article.summaryPoints
+                : [article.description || '요약 정보가 없습니다.'];
+            
+            document.getElementById('summary-content').innerHTML = summaryPoints
+                .map(point => `<div class="summary-point"><span class="summary-bullet">•</span><span>${escapeHtml(point)}</span></div>`)
+                .join('');
 
-        function formatDateTime(dateString) {
-            try {
-                const date = new Date(dateString);
-                if (isNaN(date.getTime())) return '시간 정보 없음';
-                
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                
-                return `${year}.${month}.${day} ${hours}:${minutes}`;
-            } catch (error) {
-                return '시간 정보 없음';
-            }
-        }
-
-        function cleanSummaryPoint(point) {
-            // 맨 앞의 점(.) 제거
-            return point.replace(/^\.\s*/, '').trim();
-        }
-
-        async function loadArticle() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const section = urlParams.get('section');
-            const id = urlParams.get('id');
-
-            if (!section || !id) {
-                document.getElementById('article-content').innerHTML = 
-                    '<div class="error">잘못된 접근입니다.</div>';
-                return;
+            const originalLink = document.getElementById('original-link');
+            if (article.link || article.url) {
+                originalLink.href = article.link || article.url;
+            } else {
+                originalLink.style.display = 'none';
             }
 
-            try {
-                // 빠른 API 먼저 시도, 실패 시 기존 API 사용
-                let apiUrl = `/api/article/${section}/${id}/fast`;
-                console.log('Fetching from Fast API:', apiUrl);
-                
-                let response = await fetch(apiUrl);
-                
-                // 빠른 API 실패 시 기존 API로 백업
-                if (!response.ok) {
-                    console.log('Fast API failed, trying original API...');
-                    apiUrl = `/api/article/${section}/${id}`;
-                    response = await fetch(apiUrl);
-                }
-                
-                if (!response.ok) {
-                    throw new Error('기사를 찾을 수 없습니다.');
-                }
-
-                const result = await response.json();
-                console.log('API Response:', result);
-                
-                if (!result.success || !result.data) {
-                    throw new Error('기사 데이터가 없습니다.');
-                }
-
-                const article = result.data;
-                
-                // 상세 요약 생성 (핵심 요약과 다르게)
-                let detailedSummary = '';
-                if (article.summaryPoints && article.summaryPoints.length > 0) {
-                    detailedSummary = article.summaryPoints
-                        .map(point => `<div class="summary-point">${cleanSummaryPoint(point)}</div>`)
-                        .join('');
-                } else if (article.descriptionKo) {
-                    detailedSummary = `<div class="summary-point">${article.descriptionKo}</div>`;
-                } else {
-                    detailedSummary = '<div class="summary-point">상세 요약 정보가 없습니다.</div>';
-                }
-
-                // 이미지 HTML 생성
-                let imageHtml = '';
-                if (article.imageUrl) {
-                    imageHtml = `<img src="${article.imageUrl}" alt="기사 이미지" class="article-image" onerror="this.style.display='none'">`;
-                }
-
-                const html = `
-                    <h1 class="article-title">${article.titleKo || article.title || '제목 없음'}</h1>
-                    
-                    <div class="article-meta">
-                        <div class="meta-left">
-                            <span class="source">${article.source || '출처 없음'}</span>
-                            <span class="publish-time">${formatDateTime(article.publishedAt)}</span>
-                        </div>
-                        <div class="meta-right">
-                            <div class="rating">
-                                <span class="rating-star">⭐</span>${article.rating || '0.0'}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    ${imageHtml}
-                `;
-
-                const contentHtml = `
-                    <div class="content">
-                        <h2 class="section-title">
-                            <span class="section-icon">✨</span>
-                            AI 상세 요약
-                        </h2>
-                        ${detailedSummary}
-                        
-                        <div class="actions">
-                            ${article.url ? `<a href="${article.url}" target="_blank" class="action-button">🔗 원문 보기</a>` : ''}
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('article-content').innerHTML = html + contentHtml;
-                
-                // 페이지 제목 업데이트
-                document.title = `${article.titleKo || article.title || '기사 상세보기'} - EmarkNews`;
-
-            } catch (error) {
-                console.error('Error loading article:', error);
-                document.getElementById('article-content').innerHTML = 
-                    `<div class="error">기사를 불러오는 중 오류가 발생했습니다: ${error.message}</div>`;
-            }
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
         }
 
-        // 페이지가 로드되면 실행되는 메인 로직
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = `오류가 발생했습니다: ${message}`;
+            errorDiv.style.display = 'block';
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const articleId = urlParams.get('id');
+            const id = urlParams.get('id');
             const section = urlParams.get('section');
 
-            if (!articleId || !section) {
-                showError('기사 정보를 URL에서 찾을 수 없습니다.');
+            if (!id || !section) {
+                showError('기사 ID 또는 섹션 정보가 없습니다.');
                 return;
             }
 
-            // [수정] 닫기 버튼의 동작을 결정하는 로직 추가
-            const isOpenedByScript = sessionStorage.getItem('isOpenedByScript');
-
-            if (isOpenedByScript === 'true') {
-                // 메인 페이지가 남긴 표식을 확인했으므로, 이제 지워줍니다. (새로고침 시 오작동 방지)
-                sessionStorage.removeItem('isOpenedByScript');
-                
-                // 모든 '닫기' 버튼의 기능을 window.close로 변경합니다.
-                document.querySelectorAll('.close-button').forEach(button => {
-                    button.textContent = '창 닫기';
-                    button.onclick = () => window.close();
-                });
-            } else {
-                // 표식이 없으면 (직접 접속 등), '목록으로' 돌아가는 기능으로 설정합니다.
-                document.querySelectorAll('.close-button').forEach(button => {
-                    button.textContent = '목록으로';
-                    button.onclick = () => window.location.href = '/';
-                });
+            let article = null;
+            const storageKey = `article_${section}_${id}`;
+            
+            try {
+                const storedData = sessionStorage.getItem(storageKey);
+                if (storedData) {
+                    article = JSON.parse(storedData);
+                }
+            } catch (e) {
+                console.error('Failed to parse sessionStorage data:', e);
+                sessionStorage.removeItem(storageKey);
             }
 
-            // 기사 데이터를 불러오고 렌더링
-            await loadArticle();
+            if (!article) {
+                try {
+                    // API 호출 시 상대 경로를 사용
+                    const url = `${API_BASE_URL}/api/article/${section}/${id}`;
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`서버 응답 오류 (${response.status})`);
+                    }
+                    const result = await response.json();
+                    if (result.success && result.data) {
+                        article = result.data;
+                    } else {
+                        throw new Error(result.message || '유효하지 않은 API 데이터');
+                    }
+                } catch (error) {
+                    showError(error.message);
+                    return;
+                }
+            }
+
+            if (article) {
+                renderArticle(article);
+            } else {
+                showError('기사 정보를 불러오지 못했습니다.');
+            }
         });
     </script>
 </body>
 </html>
-
