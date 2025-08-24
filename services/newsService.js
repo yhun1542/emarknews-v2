@@ -1344,9 +1344,15 @@ class NewsService {
     
     const rankedItems = await Promise.all(items.map(async (it) => {
       const ageMin = it.ageMinutes || 0;
+      const ageHours = ageMin / 60; // 시간 단위로 변환
       const domain = it.domain || '';
       const f_score = freshness(ageMin);
-      const v_score = Math.min(1, (it.reactions || 0) / 1000);
+      
+      // 🚀 [개선] 화제성(Velocity) 점수: 시간 대비 반응 속도
+      // (반응 수 / 기사가 발행된 후 지난 시간) -> 시간이 얼마 안 됐는데 반응이 많을수록 높은 점수
+      // ageHours가 0이 되는 것을 방지하기 위해 +1, 점수 폭발을 막기 위해 상한선(1) 설정
+      const v_score = Math.min(1, (it.reactions || 0) / (ageHours + 1) / 1000);
+      
       const e_score = Math.min(1, Math.log10((it.reactions || 0) + 1) / 4);
       const s_score = (SOURCE_WEIGHTS[domain] || 1) / 5;
       const score = (w.f * f_score) + (w.v * v_score) + (w.e * e_score) + (w.s * s_score);
@@ -1367,7 +1373,12 @@ class NewsService {
           rating: rating.toFixed(1),
           titleKo: it.titleKo || it.title, 
           summaryPoints: (it.summaryPoints && it.summaryPoints.length > 0) ? it.summaryPoints : (it.description ? [it.description] : []),
-          tags: this.generateTags(it, section)
+          tags: this.generateTags(it, section),
+          // 🔍 디버깅용 점수들 노출
+          velocity: v_score.toFixed(3), // 화제성 점수
+          freshness: f_score.toFixed(3), // 신선도 점수
+          engagement: e_score.toFixed(3), // 참여도 점수
+          source_trust: s_score.toFixed(3) // 신뢰도 점수
       };
     }));
     
