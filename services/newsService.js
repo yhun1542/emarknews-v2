@@ -730,7 +730,7 @@ class NewsService {
   }
 
   // ====== 내부: 완전체 ======
-  async _getFull(section){
+  async _getFull(section, readArticles=[]){
     const key=`${section}_full_${RATING_SERVICE_VERSION}`;
     let cached = null;
     if (redis) { try { cached = await redis.get(key); } catch (e) { this.logger.warn('Redis get failed:', e.message); } }
