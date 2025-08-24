@@ -482,13 +482,13 @@
                 
                 // 모든 '닫기' 버튼의 기능을 window.close로 변경합니다.
                 document.querySelectorAll('.close-button').forEach(button => {
-                    button.textContent = '← 창 닫기';
+                    button.textContent = '창 닫기';
                     button.onclick = () => window.close();
                 });
             } else {
                 // 표식이 없으면 (직접 접속 등), '목록으로' 돌아가는 기능으로 설정합니다.
                 document.querySelectorAll('.close-button').forEach(button => {
-                    button.textContent = '← 목록으로';
+                    button.textContent = '목록으로';
                     button.onclick = () => window.location.href = '/';
                 });
             }
