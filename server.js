@@ -507,6 +507,37 @@ app.get('/api/news/:section', async (req, res) => {
   }
 });
 
+// Fast article detail endpoint (Redis optimized)
+app.get('/api/article/:section/:id/fast', async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const { section, id } = req.params;
+    
+    const article = await newsService.getArticleFast(section, id);
+    
+    if (!article) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Article not found',
+        loadTime: Date.now() - startTime
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      data: article,
+      cached: true,
+      loadTime: Date.now() - startTime
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      loadTime: Date.now() - startTime
+    });
+  }
+});
+
 // Get specific article
 app.get('/api/article/:section/:id', async (req, res) => {
   try {

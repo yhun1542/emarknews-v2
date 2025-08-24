@@ -614,6 +614,10 @@ class NewsService {
     try {
       if (redis) { await redis.set(key, JSON.stringify(initial), 'EX', FAST.TTL_FAST); } 
       else { memoryCache.set(key, initial); setTimeout(() => memoryCache.delete(key), FAST.TTL_FAST * 1000); }
+      
+      // 개별 기사들도 Redis에 캐싱 (성능 최적화)
+      await this.cacheIndividualArticles(initial.data, section);
+      
     } catch (e) { this.logger.warn('Cache save failed:', e.message); }
 
     // Phase1 데이터로 즉시 AI 처리 시작
@@ -634,6 +638,10 @@ class NewsService {
       if (redis) { 
         redis.set(key, JSON.stringify(aiPayload), 'EX', FAST.TTL_FAST).then(() => {
           this.logger.info(`[${section}] AI data successfully saved to Redis cache key: ${key}`);
+          
+          // AI 처리된 개별 기사들도 캐싱
+          this.cacheIndividualArticles(aiPayload.data, section);
+          
         }).catch(e => {
           this.logger.error(`[${section}] AI cache save failed:`, e.message);
         }); 
@@ -690,6 +698,10 @@ class NewsService {
               redis.set(key, JSON.stringify(payload), 'EX', FAST.TTL_FULL).catch(e => 
                 this.logger.warn('Phase2 cache save failed:', e.message)
               ); 
+              
+              // Phase2 완료된 개별 기사들도 캐싱
+              this.cacheIndividualArticles(payload.data, section);
+              
             } else { 
               memoryCache.set(key, payload); 
               setTimeout(() => memoryCache.delete(key), FAST.TTL_FULL * 1000); 
@@ -750,6 +762,10 @@ class NewsService {
     try {
       if (redis) { await redis.set(key, JSON.stringify(payload), 'EX', FAST.TTL_FULL); }
       else { memoryCache.set(key, payload); setTimeout(() => memoryCache.delete(key), FAST.TTL_FULL * 1000); }
+      
+      // 개별 기사들도 Redis에 캐싱 (성능 최적화)
+      await this.cacheIndividualArticles(payload.data, section);
+      
     } catch (e) { this.logger.warn('Cache save failed:', e.message); }
     
     return payload;

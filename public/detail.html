@@ -335,10 +335,18 @@
             }
 
             try {
-                const apiUrl = `/api/article/${section}/${id}`;
-                console.log('Fetching from API:', apiUrl);
+                // 빠른 API 먼저 시도, 실패 시 기존 API 사용
+                let apiUrl = `/api/article/${section}/${id}/fast`;
+                console.log('Fetching from Fast API:', apiUrl);
                 
-                const response = await fetch(apiUrl);
+                let response = await fetch(apiUrl);
+                
+                // 빠른 API 실패 시 기존 API로 백업
+                if (!response.ok) {
+                    console.log('Fast API failed, trying original API...');
+                    apiUrl = `/api/article/${section}/${id}`;
+                    response = await fetch(apiUrl);
+                }
                 
                 if (!response.ok) {
                     throw new Error('기사를 찾을 수 없습니다.');
