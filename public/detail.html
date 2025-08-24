@@ -227,7 +227,6 @@
         .bottom-nav {
             display: flex;
             justify-content: center;
-            gap: 16px;
             margin-top: 32px;
             padding-top: 24px;
             border-top: 1px solid var(--border-color);
@@ -237,30 +236,19 @@
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 32px;
             border-radius: 10px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
             transition: all 0.3s ease;
             box-shadow: 0 4px 16px rgba(90, 79, 207, 0.3);
-            min-width: 120px;
         }
 
         .action-button:hover {
             background: var(--primary-dark);
             transform: translateY(-2px);
             box-shadow: 0 6px 24px rgba(90, 79, 207, 0.4);
-        }
-
-        .action-button:first-child {
-            background: var(--text-secondary);
-            box-shadow: 0 4px 16px rgba(100, 116, 139, 0.3);
-        }
-
-        .action-button:first-child:hover {
-            background: #475569;
-            box-shadow: 0 6px 24px rgba(100, 116, 139, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -307,8 +295,7 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="action-button close-button" onclick="window.history.back()">← 뒤로가기</button>
-            <button class="action-button close-button" onclick="window.location.href='/'">← 목록으로</button>
+            <button class="action-button close-button" onclick="window.close()">닫기</button>
         </div>
     </div>
 
