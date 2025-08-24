@@ -309,7 +309,7 @@
         </div>
         
         <div class="bottom-nav">
-            <button class="action-button close-button" onclick="window.close()">닫기</button>
+            <button class="action-button close-button" onclick="closeWindow()">닫기</button>
         </div>
     </div>
 
@@ -317,21 +317,30 @@
 
         function closeWindow() {
             try {
-                // 1. 브라우저 뒤로가기 시도
+                // 1. 새 창 닫기 시도 (가장 우선)
+                if (window.opener) {
+                    window.close();
+                    return;
+                }
+                
+                // 2. 브라우저 뒤로가기 시도
                 if (window.history.length > 1) {
                     window.history.back();
                     return;
                 }
                 
-                // 2. 새 창 닫기 시도
-                window.close();
+                // 3. 부모 창으로 메시지 전송 (iframe인 경우)
+                if (window.parent !== window) {
+                    window.parent.postMessage('close', '*');
+                    return;
+                }
                 
-                // 3. 닫기가 안되면 홈페이지로 이동
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 100);
+                // 4. 최종 대안: 홈페이지로 이동
+                window.location.href = '/';
+                
             } catch (error) {
                 console.error('닫기 오류:', error);
+                // 모든 방법이 실패하면 홈페이지로 이동
                 window.location.href = '/';
             }
         }
