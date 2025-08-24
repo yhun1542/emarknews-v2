@@ -51,11 +51,11 @@
         @media (max-width: 768px) {
             :root { --header-height: 60px; --nav-height: 48px; } body { background: var(--surface-color); } .logo-svg { width: 32px; height: 32px; } .logo-text { font-size: 22px; } .logo-com { font-size: 16px; } .main { margin: 0; padding: 0; }
             .news-grid { display: block; height: calc(100dvh - var(--header-height) - var(--nav-height)); height: calc(100vh - var(--header-height) - var(--nav-height)); overflow-y: auto; scroll-snap-type: y mandatory; }
-            .news-item { height: 100%; scroll-snap-align: start; border-radius: 0; box-shadow: none; border: none; border-bottom: 8px solid var(--background-color); display: flex; flex-direction: column; }
-            .news-content-wrapper { padding: 1.5rem 1rem; flex: 1; display: flex; flex-direction: column; }
+            .news-item { height: 100%; scroll-snap-align: start; border-radius: 0; box-shadow: none; border: none; border-bottom: 8px solid var(--background-color); display: flex; flex-direction: column; min-height: 100vh; }
+            .news-content-wrapper { padding: 1.5rem 1rem 0.5rem 1rem; flex: 1; display: flex; flex-direction: column; }
             .news-title-translated { font-size: 1.5rem; }
-            .news-actions-wrapper { padding: 1rem; margin-top: auto; background: transparent; }
-            .view-details-btn { padding: 1rem; }
+            .news-actions-wrapper { padding: 1rem; margin-top: auto; background: transparent; flex-shrink: 0; position: sticky; bottom: 0; background: var(--surface-color); border-top: 1px solid var(--border-color); }
+            .view-details-btn { padding: 1rem 2rem; width: 100%; font-size: 1rem; border-radius: 12px; }
         }
         @media (min-width: 769px) and (max-width: 1024px) { .news-grid { grid-template-columns: repeat(2, 1fr); } }
         .nav-container::-webkit-scrollbar, .news-grid::-webkit-scrollbar, .news-content-wrapper::-webkit-scrollbar { display: none; }
@@ -155,14 +155,21 @@
             // 이 방식은 더 효율적이고 안정적이며, 이전에 발생했던 링크 오류 문제를 근본적으로 해결합니다.
             setupDetailButtonListener() {
                 this.newsGrid.addEventListener('click', (e) => {
-                    const button = e.target.closest('.view-details-btn');
-                    if (button) {
+                    // 상세보기 버튼 클릭 처리
+                    if (e.target.classList.contains('view-details-btn') || e.target.closest('.view-details-btn')) {
                         e.preventDefault();
-                        const articleId = button.dataset.articleId;
-                        const section = button.dataset.section;
+                        e.stopPropagation();
+                        
+                        const button = e.target.classList.contains('view-details-btn') ? e.target : e.target.closest('.view-details-btn');
+                        const articleId = button.getAttribute('data-article-id');
+                        const section = button.getAttribute('data-section');
+                        
+                        console.log('Detail button clicked:', { articleId, section });
+                        
                         if (articleId && section) {
                             this.openDetailPage(articleId, section);
                         } else {
+                            console.error('Missing article data:', { articleId, section });
                             alert('기사 정보를 찾을 수 없습니다.');
                         }
                     }
@@ -278,14 +285,35 @@
             }
             
             openDetailPage(articleId, section) {
+                console.log('Opening detail page for:', { articleId, section });
+                
                 const article = this.articles.find(a => a.id === articleId);
                 if (!article) {
+                    console.error('Article not found:', articleId);
                     alert('기사를 찾을 수 없습니다.');
                     return;
                 }
-                sessionStorage.setItem(`article_${section}_${articleId}`, JSON.stringify(article));
-                sessionStorage.setItem('isOpenedByScript', 'true');
-                window.open(`/detail.html?section=${section}&id=${articleId}`, '_blank');
+                
+                try {
+                    // 세션 스토리지에 기사 데이터 저장
+                    const storageKey = `article_${section}_${articleId}`;
+                    sessionStorage.setItem(storageKey, JSON.stringify(article));
+                    sessionStorage.setItem('isOpenedByScript', 'true');
+                    
+                    // 상세 페이지 URL 생성
+                    const detailUrl = `/detail.html?section=${encodeURIComponent(section)}&id=${encodeURIComponent(articleId)}`;
+                    
+                    // 새 창으로 열기
+                    const newWindow = window.open(detailUrl, '_blank', 'noopener,noreferrer');
+                    
+                    if (!newWindow) {
+                        // 팝업이 차단된 경우 현재 창에서 열기
+                        window.location.href = detailUrl;
+                    }
+                } catch (error) {
+                    console.error('Error opening detail page:', error);
+                    alert('상세 페이지를 열 수 없습니다.');
+                }
             }
 
             setupWebSocket() {

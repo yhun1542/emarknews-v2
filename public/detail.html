@@ -94,12 +94,22 @@
 
         function closeWindow() {
             try {
-                window.close();
-                // 창이 안 닫히면 홈페이지로 이동
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 100);
+                // 먼저 브라우저 히스토리를 확인
+                if (window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+                
+                // 새 창으로 열린 경우 창 닫기 시도
+                if (window.opener) {
+                    window.close();
+                    return;
+                }
+                
+                // 모든 방법이 실패하면 홈페이지로 이동
+                window.location.href = '/';
             } catch (e) {
+                console.error('Close window error:', e);
                 window.location.href = '/';
             }
         }
