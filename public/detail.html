@@ -462,8 +462,40 @@
             }
         }
 
-        // 페이지 로드 시 기사 불러오기
-        document.addEventListener('DOMContentLoaded', loadArticle);
+        // 페이지가 로드되면 실행되는 메인 로직
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const articleId = urlParams.get('id');
+            const section = urlParams.get('section');
+
+            if (!articleId || !section) {
+                showError('기사 정보를 URL에서 찾을 수 없습니다.');
+                return;
+            }
+
+            // [수정] 닫기 버튼의 동작을 결정하는 로직 추가
+            const isOpenedByScript = sessionStorage.getItem('isOpenedByScript');
+
+            if (isOpenedByScript === 'true') {
+                // 메인 페이지가 남긴 표식을 확인했으므로, 이제 지워줍니다. (새로고침 시 오작동 방지)
+                sessionStorage.removeItem('isOpenedByScript');
+                
+                // 모든 '닫기' 버튼의 기능을 window.close로 변경합니다.
+                document.querySelectorAll('.close-button').forEach(button => {
+                    button.textContent = '← 창 닫기';
+                    button.onclick = () => window.close();
+                });
+            } else {
+                // 표식이 없으면 (직접 접속 등), '목록으로' 돌아가는 기능으로 설정합니다.
+                document.querySelectorAll('.close-button').forEach(button => {
+                    button.textContent = '← 목록으로';
+                    button.onclick = () => window.location.href = '/';
+                });
+            }
+
+            // 기사 데이터를 불러오고 렌더링
+            await loadArticle();
+        });
     </script>
 </body>
 </html>

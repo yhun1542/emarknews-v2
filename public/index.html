@@ -676,15 +676,15 @@
                     alert('기사를 찾을 수 없습니다.');
                     return;
                 }
+
+                const storageKey = `article_${section}_${articleId}`;
+                sessionStorage.setItem(storageKey, JSON.stringify(article));
                 
-                // [수정] sessionStorage에 데이터를 저장하는 것은 동일합니다.
-                sessionStorage.setItem(`article_${section}_${articleId}`, JSON.stringify(article));
+                // [수정] 새 창을 열기 전에, 이 창이 스크립트로 열렸다는 표식을 남깁니다.
+                sessionStorage.setItem('isOpenedByScript', 'true');
                 
                 const detailUrl = `/detail.html?section=${section}&id=${articleId}`;
-                
-                // [수정] window.location.href 대신 window.open을 사용합니다.
-                // '_blank'는 새 탭 또는 새 창으로 열라는 의미입니다.
-                window.open(detailUrl, '_blank'); 
+                window.open(detailUrl, '_blank');
             }
 
             scrollToTop() {
