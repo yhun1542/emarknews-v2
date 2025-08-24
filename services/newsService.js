@@ -581,19 +581,19 @@ class NewsService {
     const rs = RSS_FEEDS[section] || [];
     let phase1 = [];
     
-    // API 키가 없을 때는 RSS 우선으로 처리
+    // API 키가 없을 때는 RSS 우선으로 처리 - 더 많은 소스 사용
     if (section === 'kr') { 
-      phase1 = [ this.fetchFromNaver(section), ...(rs.slice(0,2).map(r=>this.fetchFromRSS(r.url))) ]; 
+      phase1 = [ this.fetchFromNaver(section), ...(rs.slice(0,4).map(r=>this.fetchFromRSS(r.url))) ]; // 2→4개로 증가
     }
     else if (section === 'japan') { 
-      phase1 = [ ...(rs.slice(0,3).map(r=>this.fetchFromRSS(r.url))) ]; 
+      phase1 = [ ...(rs.slice(0,5).map(r=>this.fetchFromRSS(r.url))) ]; // 3→5개로 증가
     }
     else { 
       // API 키가 있을 때만 NewsAPI 사용, 없으면 RSS만 사용
       if (process.env.NEWS_API_KEY && process.env.NEWS_API_KEY !== 'your_newsapi_key_here') {
-        phase1 = [ this.fetchFromNewsAPI(section), ...(rs.slice(0,3).map(r=>this.fetchFromRSS(r.url))) ];
+        phase1 = [ this.fetchFromNewsAPI(section), ...(rs.slice(0,6).map(r=>this.fetchFromRSS(r.url))) ]; // 3→6개로 증가
       } else {
-        phase1 = [ ...(rs.slice(0,4).map(r=>this.fetchFromRSS(r.url))) ];
+        phase1 = [ ...(rs.slice(0,8).map(r=>this.fetchFromRSS(r.url))) ]; // 4→8개로 증가
       }
     }
     
