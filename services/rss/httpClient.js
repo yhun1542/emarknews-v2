@@ -12,7 +12,12 @@ const client = axios.create({
   httpAgent: agentHttp,
   httpsAgent: agentHttps,
   headers: {
-    'user-agent': process.env.RSS_USER_AGENT ?? 'emarknews-bot/1.0 (+https://emarknews.com)'
+    'User-Agent': process.env.RSS_USER_AGENT ?? 'Mozilla/5.0 (compatible; EmarkNews/2.0 RSS Reader; +https://emarknews.com)',
+    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+    'Accept-Language': 'en-US,en;q=0.9,ko;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive'
   },
   responseType: 'text',
   validateStatus: (s) => s >= 200 && s < 400,

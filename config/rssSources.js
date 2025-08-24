@@ -62,14 +62,17 @@ const rssSources = {
   ],
   
   business: [
-    // 기존 비즈니스 RSS 소스들
+    // 안정적인 비즈니스 RSS 소스들 (문제 피드 제거 및 대체)
     { name: 'Reuters Business', url: 'https://feeds.reuters.com/reuters/businessNews' },
     { name: 'Bloomberg', url: 'https://feeds.bloomberg.com/markets/news.rss' },
     { name: 'Financial Times', url: 'https://www.ft.com/rss/home' },
     { name: 'Wall Street Journal', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml' },
     { name: 'Forbes', url: 'https://www.forbes.com/real-time/feed2/' },
     { name: 'MarketWatch', url: 'http://feeds.marketwatch.com/marketwatch/topstories/' },
-    { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+    // CNBC 제거 (403 오류) - 대체 소스 추가
+    { name: 'Yahoo Finance', url: 'https://feeds.finance.yahoo.com/rss/2.0/headline' },
+    { name: 'Business Insider', url: 'https://feeds.businessinsider.com/custom/all' },
+    { name: 'Seeking Alpha', url: 'https://seekingalpha.com/feed.xml' },
     
     // NewsAPI 통합
     { name: 'NewsAPI Business', url: 'newsapi://business', type: 'api' },
@@ -77,12 +80,15 @@ const rssSources = {
   ],
   
   buzz: [
-    // 기존 버즈 RSS 소스들
+    // 안정적인 버즈 RSS 소스들 (문제 피드 제거 및 대체)
     { name: 'BBC Trending', url: 'https://feeds.bbci.co.uk/news/technology/rss.xml' },
     { name: 'Vice News', url: 'https://www.vice.com/en/rss' },
     { name: 'BuzzFeed', url: 'https://www.buzzfeed.com/world.xml' },
     { name: 'Mashable', url: 'https://mashable.com/feeds/rss/all' },
-    { name: 'The Daily Beast', url: 'https://www.thedailybeast.com/rss' },
+    // The Daily Beast 제거 (404 오류) - 대체 소스 추가
+    { name: 'Variety', url: 'https://variety.com/feed/' },
+    { name: 'E! News', url: 'https://www.eonline.com/syndication/feeds/rssfeeds/topstories.xml' },
+    { name: 'Entertainment Weekly', url: 'https://ew.com/feed/' },
     { name: 'Huffington Post', url: 'https://www.huffpost.com/section/front-page/feed' },
     
     // NewsAPI 통합

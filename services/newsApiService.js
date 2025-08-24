@@ -447,6 +447,51 @@ class NewsApiService {
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    /**
+     * newsapi:// 프로토콜 URL 처리
+     * @param {string} url - newsapi://tech 형태의 URL
+     * @returns {Array} - RSS 형태로 변환된 기사 배열
+     */
+    async fetchFromNewsAPIProtocol(url) {
+        if (!url.startsWith('newsapi://')) {
+            throw new Error('Invalid NewsAPI protocol URL');
+        }
+
+        const section = url.replace('newsapi://', '');
+        
+        try {
+            switch (section) {
+                case 'world':
+                    return await this.getWorldNews();
+                case 'tech':
+                    return await this.getTechNews();
+                case 'business':
+                    return await this.getBusinessNews();
+                case 'korea':
+                    return await this.getKoreaNews();
+                case 'japan':
+                    return await this.getJapanNews();
+                case 'buzz':
+                    return await this.getBuzzNews();
+                default:
+                    console.warn(`Unknown NewsAPI section: ${section}, falling back to world news`);
+                    return await this.getWorldNews();
+            }
+        } catch (error) {
+            console.error(`Error fetching NewsAPI data for ${section}:`, error.message);
+            return [];
+        }
+    }
+
+    /**
+     * URL이 NewsAPI 프로토콜인지 확인
+     * @param {string} url 
+     * @returns {boolean}
+     */
+    isNewsAPIProtocol(url) {
+        return typeof url === 'string' && url.startsWith('newsapi://');
+    }
 }
 
 module.exports = NewsApiService;
