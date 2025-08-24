@@ -18,7 +18,7 @@ const rssSources = {
     { name: 'Google News World', url: 'google-news://world', type: 'api' }
   ],
   
-  korea: [
+  kr: [
     // 기존 한국 RSS 소스들
     { name: 'Yonhap News', url: 'https://www.yna.co.kr/rss/news.xml' },
     { name: 'Kyunghyang', url: 'http://www.khan.co.kr/rss/rssdata/total_news.xml' },
@@ -28,8 +28,8 @@ const rssSources = {
     { name: 'MBC News', url: 'https://imnews.imbc.com/rss/news/news_00.xml' },
     
     // NewsAPI 통합 (한국 관련 뉴스만, 한국어 번역 필수)
-    { name: 'NewsAPI Korea', url: 'newsapi://korea', type: 'api', requiresTranslation: true },
-    { name: 'Google News Korea', url: 'google-news://korea', type: 'api', requiresTranslation: true }
+    { name: 'NewsAPI Korea', url: 'newsapi://kr', type: 'api', requiresTranslation: true },
+    { name: 'Google News Korea', url: 'google-news://kr', type: 'api', requiresTranslation: true }
   ],
   
   japan: [
